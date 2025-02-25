@@ -1,9 +1,20 @@
 <!-- header.php -->
 <?php
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Check if user is logged in, if not redirect to login page
+if (!isset($_SESSION['id']) || empty($_SESSION['id'])) {
+    // Redirect to login page
+    header("Location: doctorlog.php");
+    exit();
+}
+
 include 'db_connection.php'; // Your DB connection file
 
-
-$doctorId = $_SESSION['id']; // Assuming doctor_id is stored in the session
+$doctorId = $_SESSION['id']; // Doctor ID from session
 
 $query = "SELECT profile_photo FROM doctorreg WHERE id = '$doctorId'";
 $result = mysqli_query($conn, $query);
@@ -17,7 +28,7 @@ $profilePic = !empty($row['profile_photo']) ? $row['profile_photo'] : 'default-p
     <nav class="navbar navbar-expand-lg navbar-dark">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="dashboard.php">
@@ -56,25 +67,26 @@ $profilePic = !empty($row['profile_photo']) ? $row['profile_photo'] : 'default-p
                     </li>
                 </ul>
                 <div class="nav-right d-flex align-items-center">
-                <div class="nav-right d-flex align-items-center">
-    <div class="dropdown">
-        <a class="nav-link user-profile-dropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-        <img src="<?php echo $profilePic; ?>" onerror="this.onerror=null; this.src='images/profilepicdoct.jpg';" class="profile-pic" />
-        </a>
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="doctorac.php"><i class="fas fa-id-card me-2"></i>Profile</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item text-danger" href="doctorlogout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-        </ul>
-    </div>
-</div>
-
-</div>
-
+                    <div class="dropdown">
+                        <a class="nav-link user-profile-dropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="<?php echo $profilePic; ?>" onerror="this.onerror=null; this.src='images/profilepicdoct.jpg';" class="profile-pic" />
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="doctorac.php"><i class="fas fa-id-card me-2"></i>Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="doctorlogout.php" onclick="handleLogout(event)">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>
 </header>
+
 <!-- Bootstrap Bundle with Popper.js -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -488,8 +500,9 @@ $profilePic = !empty($row['profile_photo']) ? $row['profile_photo'] : 'default-p
     
 </style>
 <script>
-    /* Add this script to your page to highlight the current page */
+    /* Script to highlight the current page and enhance logout functionality */
     document.addEventListener('DOMContentLoaded', function() {
+        // Highlight current page
         const currentPage = window.location.pathname.split('/').pop();
         const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
         
@@ -513,8 +526,16 @@ $profilePic = !empty($row['profile_photo']) ? $row['profile_photo'] : 'default-p
                     menu.style.transform = 'translateY(0)';
                 }, 10);
             });
-            
-            
         });
     });
-    </script>
+    
+    // Ensure proper logout and prevent access to protected pages
+    function handleLogout(event) {
+        // Clear any client-side stored data if necessary
+        localStorage.removeItem('doctorAuth');
+        sessionStorage.removeItem('doctorAuth');
+        
+        // Allow the default action (redirect to logout.php) to continue
+        return true;
+    }
+</script>

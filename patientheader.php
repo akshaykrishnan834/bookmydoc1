@@ -1,17 +1,27 @@
-<!-- header.php -->
 <?php
 include 'db_connection.php'; // Your DB connection file
 session_start(); // Add this at the very top
 
+// Check if the user is logged in
 if (!isset($_SESSION['id'])) {
-    header("Location: login.php");
+    // Clear any existing output buffers
+    if (ob_get_length()) {
+        ob_clean();
+    }
+    
+    // Set cache control headers to prevent caching
+    header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+    header("Cache-Control: post-check=0, pre-check=0", false);
+    header("Pragma: no-cache");
+    header("Expires: 0");
+    
+    // Redirect to login page
+    header("Location: patientlog.php");
     exit();
 }
 
-
-$patientId = $_SESSION['id']; // Assuming doctor_id is stored in the session
-
-
+// Get patient profile info
+$patientId = $_SESSION['id']; // Assuming patient_id is stored in the session
 $query = "SELECT profile_pic FROM patientreg WHERE id = '$patientId'";
 $result = mysqli_query($conn, $query);
 $row = mysqli_fetch_assoc($result);

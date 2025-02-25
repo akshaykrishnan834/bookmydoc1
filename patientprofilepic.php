@@ -221,7 +221,7 @@ $conn->close();
             <?php endif; ?>
             
             <img src="<?php echo !empty($patient['profile_pic']) ? htmlspecialchars($patient['profile_pic']) : 'default-profile.jpg'; ?>" 
-                 alt="Current Profile Picture" 
+                 onerror="this.onerror=null; this.src='images/profilepicdoct.jpg';"
                  class="current-photo"
                  onerror="this.src='default-profile.jpg'">
             
