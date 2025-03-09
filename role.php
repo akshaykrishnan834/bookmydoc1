@@ -16,6 +16,7 @@
             align-items: center;
             height: 100vh;
             color: #333;
+            position: relative; /* Allow absolute positioning relative to body */
         }
 
         /* Form Container */
@@ -66,6 +67,38 @@
             margin-bottom: 20px;
         }
 
+        /* Admin Button (Positioned at top left) */
+        .admin-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background-color: #0077b6;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+
+        .admin-btn img {
+            width: 25px;
+            height: 25px;
+            margin-bottom: 5px;
+        }
+
+        .admin-btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
         /* Role Buttons (Stacked) */
         .role-container {
             display: flex;
@@ -97,7 +130,6 @@
             margin-bottom: 10px;
         }
 
-        .admin-btn { background-color: #0077b6; }
         .doctor-btn { background-color: #28a745; }
         .patient-btn { background-color: #dc3545; }
 
@@ -141,6 +173,11 @@
 </head>
 <body>
 
+<!-- Admin button positioned at the top left of the page -->
+<button class="admin-btn" onclick="location.href='adminlog.php?role=admin'">
+    <img src="images/admin.png" alt="Admin Icon">
+</button>
+
 <div class="form-box">
     <div class="logo-container">
         <img src="images/logo.png" alt="Logo" class="logo">
@@ -153,10 +190,6 @@
     <h3>Select Your Role</h3>
 
     <div class="role-container">
-        <button class="role-btn admin-btn" onclick="location.href='adminlog.php?role=admin'">
-            <img src="images/admin.png" alt="Admin Icon">
-            Admin
-        </button>
         <button class="role-btn doctor-btn" onclick="location.href='doctorlog.php?role=doctor'">
             <img src="images/doctor.png" alt="Doctor Icon">
             Doctor

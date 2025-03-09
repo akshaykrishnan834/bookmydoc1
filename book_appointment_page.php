@@ -1,15 +1,32 @@
-<?php session_start(); include('db_connection.php'); 
+<?php 
+session_start(); 
+include('db_connection.php'); 
 include('patientheader2.php');
 
-// Get the selected doctor's ID from the URL
-if (!isset($_GET['doctor_id'])) {
-    die("No doctor selected.");
+// Ensure doctor_id and appointment_date are passed
+if (!isset($_GET['doctor_id']) || !isset($_GET['appointment_date'])) {
+    die("Invalid request. Doctor ID and appointment date are required.");
 }
 
 $doctor_id = intval($_GET['doctor_id']);
+$appointment_date = $_GET['appointment_date'];
+
+// Validate date format
+if (!preg_match("/^\d{4}-\d{2}-\d{2}$/", $appointment_date)) {
+    die("Invalid date format.");
+}
+
+// Check if date is not in the past
+$today = date('Y-m-d');
+if ($appointment_date < $today) {
+    die("Cannot book appointments for past dates.");
+}
+
+$currentTime = date('H:i:s'); // Add this line to get the current time
+
 
 // Fetch doctor details
-$sql = "SELECT name, specialization, profile_photo FROM doctorreg WHERE id = ?";
+$sql = "SELECT name, specialization FROM doctorreg WHERE id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $doctor_id);
 $stmt->execute();
@@ -19,29 +36,6 @@ $doctor = $result->fetch_assoc();
 if (!$doctor) {
     die("Doctor not found.");
 }
-
-// Fetch available slots for the selected doctor
-$sql = "SELECT id, start_time, end_time, DATE_FORMAT(start_time, '%h:%i %p') as formatted_start, 
-        DATE_FORMAT(end_time, '%h:%i %p') as formatted_end, 
-        DAYNAME(start_time) as day_name, 
-        DATE_FORMAT(start_time, '%M %e, %Y') as formatted_date
-        FROM doctor_availability 
-        WHERE doctor_id = ? 
-        ORDER BY start_time";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $doctor_id);
-$stmt->execute();
-$result = $stmt->get_result();
-
-// Group slots by date
-$slots_by_date = [];
-while ($row = $result->fetch_assoc()) {
-    $date_key = $row['formatted_date'];
-    if (!isset($slots_by_date[$date_key])) {
-        $slots_by_date[$date_key] = [];
-    }
-    $slots_by_date[$date_key][] = $row;
-}
 ?>
 
 <!DOCTYPE html>
@@ -49,206 +43,367 @@ while ($row = $result->fetch_assoc()) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Appointment with Dr. <?php echo htmlspecialchars($doctor['name']); ?></title>
+    <title>Available Time Slots</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #2c6ced;
-            --secondary-color: #f8f9fa;
-            --text-color: #333;
-            --light-gray: #f5f7fa;
-            --border-radius: 12px;
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --background-color: #f8f9fa;
         }
-        
+
         body {
-            background-color: var(--secondary-color);
-            color: var(--text-color);
+            background-color: var(--background-color);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
-        .page-container {
-            max-width: 1000px;
-            margin: 40px auto;
-            padding: 0 20px;
+
+        .timeslot-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
         }
-        
-        .doctor-card {
+
+        .page-title {
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        .page-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background-color: var(--secondary-color);
+        }
+
+        .timeslot-card {
             background: white;
-            border-radius: var(--border-radius);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-            padding: 25px;
-            margin-bottom: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border: none;
+            transition: transform 0.3s ease;
+        }
+
+        .timeslot-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .doctor-info {
             display: flex;
             align-items: center;
-            gap: 20px;
+            margin-bottom: 1.5rem;
         }
-        
-        .doctor-image {
-            width: 90px;
-            height: 90px;
+
+        .doctor-avatar {
+            width: 60px;
+            height: 60px;
+            background-color: var(--secondary-color);
             border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
         }
-        
-        .doctor-info h2 {
+
+        .doctor-avatar i {
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .doctor-details h3 {
+            margin: 0;
             color: var(--primary-color);
-            margin-bottom: 5px;
+            font-size: 1.2rem;
             font-weight: 600;
         }
-        
-        .doctor-info p {
+
+        .doctor-details p {
+            margin: 0;
             color: #666;
-            font-size: 1.1rem;
-            margin-bottom: 0;
+            font-size: 0.9rem;
         }
-        
-        .date-container {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            margin-bottom: 25px;
-            overflow: hidden;
-        }
-        
-        .date-header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 15px 20px;
-            font-weight: 500;
-        }
-        
-        .slots-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
-            padding: 20px;
-        }
-        
-        .slot-card {
-            background: var(--light-gray);
-            border-radius: 8px;
+
+        .date-display {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
             padding: 15px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .instruction {
+            color: #666;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .time-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .time-slots-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .time-slots-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .time-slot {
+            background-color: #e8f4fd;
+            border-radius: 10px;
+            padding: 1.2rem;
             text-align: center;
             transition: all 0.3s ease;
+            cursor: pointer;
             border: 2px solid transparent;
         }
-        
-        .slot-card:hover {
+
+        .time-slot:hover:not(.unavailable) {
             transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(44, 108, 237, 0.15);
-            border-color: var(--primary-color);
+            background-color: #d4e9f7;
+            border-color: var(--secondary-color);
         }
-        
-        .slot-time {
-            font-size: 1.1rem;
+
+        .time-slot.selected {
+            background-color: var(--secondary-color);
+            color: white;
+            border-color: #2980b9;
+        }
+
+        .time-slot.unavailable {
+            background-color: #f5f5f5;
+            color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .time-slot i {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--secondary-color);
+        }
+
+        .time-slot.selected i {
+            color: white;
+        }
+
+        .time-slot.unavailable i {
+            color: #ccc;
+        }
+
+        .time-slot-time {
             font-weight: 600;
-            color: var(--text-color);
-            margin-bottom: 15px;
+            font-size: 1.1rem;
+            margin-bottom: 0.2rem;
         }
-        
-        .book-btn {
-            background-color: var(--primary-color);
+
+        .no-slots {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 2rem;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+        }
+
+        .btn-back {
+            background-color: #95a5a6;
             color: white;
             border: none;
-            border-radius: 6px;
-            padding: 8px 16px;
+            padding: 0.8rem 2rem;
+            border-radius: 8px;
             font-weight: 500;
             transition: all 0.3s ease;
         }
-        
-        .book-btn:hover {
-            background-color: #1c59cc;
-            transform: scale(1.05);
+
+        .btn-back:hover {
+            background-color: #7f8c8d;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(127, 140, 141, 0.3);
         }
-        
-        .no-slots {
-            text-align: center;
-            padding: 30px;
-            color: #666;
-            font-size: 1.1rem;
-        }
-        
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-            color: var(--primary-color);
-            text-decoration: none;
+
+        .btn-book {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 8px;
             font-weight: 500;
+            transition: all 0.3s ease;
         }
-        
-        .back-link:hover {
-            text-decoration: underline;
+
+        .btn-book:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
         }
-        
-        /* Animation for slots */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .slot-card {
-            animation: fadeIn 0.4s ease forwards;
-            animation-delay: calc(var(--delay) * 0.1s);
-            opacity: 0;
+
+        .btn-book:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
     </style>
 </head>
 <body>
 
-<div class="page-container">
-    <a href="browsedoct.php" class="back-link">
-        <i class="fas fa-arrow-left"></i> Back to Doctors
-    </a>
+<div class="timeslot-container">
+    <h2 class="text-center page-title">Available Time Slots</h2>
     
-    <div class="doctor-card">
-        
+    <div class="card timeslot-card p-4">
         <div class="doctor-info">
-            <h2>Dr. <?php echo htmlspecialchars($doctor['name']); ?></h2>
-            <p><i class="fas fa-stethoscope"></i> <?php echo htmlspecialchars($doctor['specialization']); ?></p>
-        </div>
-    </div>
-    
-    <h3 class="mb-4">Available Appointment Slots</h3>
-    
-    <?php if (count($slots_by_date) > 0) { ?>
-        <?php $delay_counter = 0; ?>
-        <?php foreach ($slots_by_date as $date => $slots) { ?>
-            <div class="date-container">
-                <div class="date-header">
-                    <i class="far fa-calendar-alt me-2"></i> <?php echo $slots[0]['day_name']; ?>, <?php echo $date; ?>
-                </div>
-                <div class="slots-container">
-                    <?php foreach ($slots as $slot) { ?>
-                        <div class="slot-card" style="--delay: <?php echo $delay_counter++; ?>">
-                            <div class="slot-time">
-                                <i class="far fa-clock me-1"></i>
-                                <?php echo $slot['formatted_start']; ?> - <?php echo $slot['formatted_end']; ?>
-                            </div>
-                            <form method="GET" action="appointmentdate.php">
-                                <input type="hidden" name="slot_id" value="<?php echo $slot['id']; ?>">
-                                <input type="hidden" name="doctor_id" value="<?php echo $doctor_id; ?>">
-                                <button type="submit" class="book-btn">
-                                    <i class="fas fa-calendar-check me-1"></i> Book Now
-                                </button>
-                            </form>
-                        </div>
-                    <?php } ?>
-                </div>
+            <div class="doctor-avatar">
+                <i class="fas fa-user-md"></i>
             </div>
-        <?php } ?>
-    <?php } else { ?>
-        <div class="no-slots">
-            <i class="far fa-calendar-times mb-3" style="font-size: 3rem; color: #dc3545;"></i>
-            <p>No available slots with Dr. <?php echo htmlspecialchars($doctor['name']); ?> at the moment.</p>
-            <p>Please check back later or contact our clinic for assistance.</p>
+            <div class="doctor-details">
+                <h3>Dr. <?php echo htmlspecialchars($doctor['name']); ?></h3>
+                <p><?php echo htmlspecialchars($doctor['specialization']); ?></p>
+            </div>
         </div>
-    <?php } ?>
+
+        <div class="date-display">
+            <i class="far fa-calendar-alt me-2"></i>
+            <?php echo date('l, F j, Y', strtotime($appointment_date)); ?>
+        </div>
+
+        <div class="instruction">
+            <i class="fas fa-info-circle me-2"></i>
+            Please select a time slot for your appointment with Dr. <?php echo htmlspecialchars($doctor['name']); ?>.
+        </div>
+
+        <?php
+        // Fetch available slots from database for the selected doctor and date
+        $sql = "SELECT id, start_time, end_time
+               FROM doctor_availability 
+               WHERE doctor_id = ? 
+               ORDER BY start_time ASC";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $doctor_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        // Check if there are existing appointments for these slots
+        $bookedSlots = [];
+        $appointmentSql = "SELECT id FROM doctor_availability WHERE doctor_id = ? ";
+        $apptStmt = $conn->prepare($appointmentSql);
+        $apptStmt->bind_param("i", $doctor_id, );
+        $apptStmt->execute();
+        $apptResult = $apptStmt->get_result();
+        
+        
+        
+        if ($result->num_rows > 0) {
+            echo '<div class="time-slots-grid">';
+            
+            $currentTime = date('H:i:s');
+            
+            while ($row = $result->fetch_assoc()) {
+                $slot_id = $row['id'];
+                $start_time = $row['start_time'];
+                $end_time = $row['end_time'];
+            
+                // Check if slot is in the past for today's date
+                $isPastSlot = ($appointment_date == $today && $start_time < $currentTime);
+            
+                // Skip rendering past slots
+                if ($isPastSlot) {
+                    continue;
+                }
+            
+                // Check if slot is already booked
+                $isBooked = in_array($slot_id, $bookedSlots);
+            
+                // Determine if slot is available
+                $isAvailable = !$isBooked;
+                $slotClass = $isAvailable ? '' : 'unavailable';
+            
+                echo "<div class='time-slot $slotClass' data-slot-id='$slot_id'>";
+                echo "<i class='far fa-clock'></i>";
+                echo "<div class='time-slot-time'>" . date('g:i A', strtotime($start_time)) . " - " . date('g:i A', strtotime($end_time)) . "</div>";
+            
+                if ($isAvailable) {
+                    echo "<div class='availability'>Available</div>";
+                } else {
+                    echo "<div class='availability'>Booked</div>";
+                }
+            
+                echo "</div>";
+            }
+            
+            
+            echo '</div>';
+        } else {
+            echo '<div class="no-slots">';
+            echo '<i class="fas fa-calendar-times fa-3x mb-3"></i>';
+            echo '<p>No time slots available for this doctor on the selected date.</p>';
+            echo '<p>Please select a different date or check with another doctor.</p>';
+            echo '</div>';
+        }
+        ?>
+
+        <form id="appointmentForm" method="GET" action="submitappointmentrqst.php">
+            <input type="hidden" name="doctor_id" value="<?php echo $doctor_id; ?>">
+            <input type="hidden" name="appointment_date" value="<?php echo $appointment_date; ?>">
+            <input type="hidden" id="slot_id" name="slot_id" value="">
+
+            <div class="btn-container">
+                <a href="appointmentdate.php?doctor_id=<?php echo $doctor_id; ?>" class="btn btn-back">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Date Selection
+                </a>
+                
+                <button type="submit" id="bookBtn" class="btn btn-book" disabled>
+                    <i class="fas fa-calendar-check me-2"></i>Proceed to Confirmation
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Handle time slot selection
+    $('.time-slot:not(.unavailable)').click(function() {
+        // Remove selected class from all time slots
+        $('.time-slot').removeClass('selected');
+        
+        // Add selected class to clicked time slot
+        $(this).addClass('selected');
+        
+        // Update hidden input with selected slot id
+        $('#slot_id').val($(this).data('slot-id'));
+        
+        // Enable book button
+        $('#bookBtn').prop('disabled', false);
+    });
+});
+</script>
+
 </body>
 </html>
-
-<?php $conn->close(); ?>

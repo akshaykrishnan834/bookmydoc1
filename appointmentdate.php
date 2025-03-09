@@ -3,12 +3,11 @@ session_start();
 include('db_connection.php'); 
 include('patientheader2.php');
 
-// Ensure slot_id and doctor_id are passed
-if (!isset($_GET['slot_id']) || !isset($_GET['doctor_id'])) {
-    die("Invalid request.");
+// Ensure doctor_id is passed
+if (!isset($_GET['doctor_id'])) {
+    die("Invalid request. Doctor ID is required.");
 }
 
-$slot_id = intval($_GET['slot_id']);
 $doctor_id = intval($_GET['doctor_id']);
 
 // Fetch doctor details
@@ -23,20 +22,9 @@ if (!$doctor) {
     die("Doctor not found.");
 }
 
-// Fetch slot details
-$sql = "SELECT start_time, end_time FROM doctor_availability WHERE id = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $slot_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$slot = $result->fetch_assoc();
-
-if (!$slot) {
-    die("Slot not found.");
-}
-
-// Get today's date to set as minimum date for the date picker
+// Get today's date and next 30 days for the calendar
 $today = date('Y-m-d');
+$endDate = date('Y-m-d', strtotime('+30 days'));
 ?>
 
 <!DOCTYPE html>
@@ -60,7 +48,7 @@ $today = date('Y-m-d');
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        .appointment-container {
+        .date-selection-container {
             max-width: 800px;
             margin: 2rem auto;
             padding: 0 1rem;
@@ -85,7 +73,7 @@ $today = date('Y-m-d');
             background-color: var(--secondary-color);
         }
 
-        .appointment-card {
+        .date-selection-card {
             background: white;
             border-radius: 15px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
@@ -93,53 +81,8 @@ $today = date('Y-m-d');
             transition: transform 0.3s ease;
         }
 
-        .appointment-card:hover {
+        .date-selection-card:hover {
             transform: translateY(-5px);
-        }
-
-        .time-slot {
-            background-color: #e8f4fd;
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .time-slot i {
-            color: var(--secondary-color);
-            margin-right: 0.5rem;
-        }
-
-        .form-label {
-            color: var(--primary-color);
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-control {
-            border-radius: 8px;
-            padding: 0.8rem;
-            border: 2px solid #e2e8f0;
-            transition: border-color 0.3s ease;
-        }
-
-        .form-control:focus {
-            border-color: var(--secondary-color);
-            box-shadow: none;
-        }
-
-        .btn-book {
-            background-color: var(--secondary-color);
-            border: none;
-            padding: 0.8rem 2rem;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .btn-book:hover {
-            background-color: #2980b9;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
         }
 
         .doctor-info {
@@ -176,14 +119,96 @@ $today = date('Y-m-d');
             color: #666;
             font-size: 0.9rem;
         }
+
+        .calendar {
+            margin-top: 1.5rem;
+        }
+
+        .date-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .weekday-header {
+            text-align: center;
+            font-weight: 600;
+            color: var(--primary-color);
+            padding: 10px 0;
+        }
+
+        .date-item {
+            text-align: center;
+            padding: 15px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .date-item:hover:not(.disabled) {
+            background-color: #e8f4fd;
+            transform: scale(1.05);
+        }
+
+        .date-item.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .date-item.disabled {
+            color: #ccc;
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+        }
+
+        .date-item .day-number {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .date-item .month-text {
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+
+        .btn-continue {
+            background-color: var(--secondary-color);
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-continue:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-continue.disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .instruction {
+            color: #666;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
 
-<div class="appointment-container">
-    <h2 class="text-center page-title">Book Your Appointment</h2>
+<div class="date-selection-container">
+    <h2 class="text-center page-title">Select Appointment Date</h2>
     
-    <div class="card appointment-card p-4">
+    <div class="card date-selection-card p-4">
         <div class="doctor-info">
             <div class="doctor-avatar">
                 <i class="fas fa-user-md"></i>
@@ -194,37 +219,89 @@ $today = date('Y-m-d');
             </div>
         </div>
 
-        <div class="time-slot">
-            <i class="far fa-clock"></i>
-            <strong>Selected Time Slot:</strong> 
-            <?php echo $slot['start_time']; ?> - <?php echo $slot['end_time']; ?>
+        <div class="instruction">
+            <i class="fas fa-info-circle me-2"></i>
+            Please select a date for your appointment. Available dates are highlighted. After selecting a date, you'll be able to choose from available time slots.
         </div>
 
-        <form method="POST" action="submitappointmentrqst.php">
-            <input type="hidden" name="slot_id" value="<?php echo $slot_id; ?>">
-            <input type="hidden" name="doctor_id" value="<?php echo $doctor_id; ?>">
-            
-            <div class="mb-4">
-                <label for="appointment_date" class="form-label">
-                    <i class="far fa-calendar-alt me-2"></i>Select Appointment Date
-                </label>
-                <input type="date" 
-                       name="appointment_date" 
-                       id="appointment_date" 
-                       class="form-control" 
-                       min="<?php echo $today; ?>" 
-                       value="<?php echo $today; ?>"
-                       required>
+        <div class="calendar">
+            <div class="date-grid">
+                <?php
+                // Display day names
+                $dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                foreach ($dayNames as $day) {
+                    echo "<div class='weekday-header'>$day</div>";
+                }
+
+                // Get the first day of the current month
+                $firstDayOfMonth = date('Y-m-01');
+                $firstDayWeekday = date('w', strtotime($firstDayOfMonth));
+                
+                // Add empty slots for days before the first day of the month
+                for ($i = 0; $i < $firstDayWeekday; $i++) {
+                    echo "<div></div>";
+                }
+
+                // Generate next 30 days
+                $currentDate = new DateTime($today);
+                $endDateObj = new DateTime($endDate);
+                
+                while ($currentDate <= $endDateObj) {
+                    $dateStr = $currentDate->format('Y-m-d');
+                    $dayNumber = $currentDate->format('j');
+                    $monthText = $currentDate->format('M');
+                    $isToday = $dateStr === $today;
+                    
+                    // Check if this date has any available slots
+                    // In a real app, you would query the database to check availability
+                    $hasAvailability = true; // Placeholder logic
+                    
+                    $class = $isToday ? 'active' : '';
+                    $class = !$hasAvailability ? 'disabled' : $class;
+                    
+                    echo "<div class='date-item $class' data-date='$dateStr'>";
+                    echo "<div class='day-number'>$dayNumber</div>";
+                    echo "<div class='month-text'>$monthText</div>";
+                    echo "</div>";
+                    
+                    $currentDate->modify('+1 day');
+                }
+                ?>
             </div>
 
-            <div class="text-center">
-                <button type="submit" class="btn btn-book btn-lg">
-                    <i class="fas fa-calendar-check me-2"></i>Request Appointment
-                </button>
-            </div>
-        </form>
+            <form id="dateForm" method="GET" action="book_appointment_page.php">
+                <input type="hidden" name="doctor_id" value="<?php echo $doctor_id; ?>">
+                <input type="hidden" id="selected_date" name="appointment_date" value="<?php echo $today; ?>">
+                
+                <div class="text-center">
+                    <button type="submit" id="continueBtn" class="btn btn-continue btn-lg">
+                        <i class="fas fa-arrow-right me-2"></i>Continue to Time Selection
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Handle date selection
+    $('.date-item:not(.disabled)').click(function() {
+        // Remove active class from all dates
+        $('.date-item').removeClass('active');
+        
+        // Add active class to selected date
+        $(this).addClass('active');
+        
+        // Update hidden input with selected date
+        $('#selected_date').val($(this).data('date'));
+        
+        // Enable continue button
+        $('#continueBtn').removeClass('disabled');
+    });
+});
+</script>
 
 </body>
 </html>

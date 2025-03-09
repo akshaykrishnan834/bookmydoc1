@@ -57,6 +57,10 @@ if (!$slot) {
     die("Time slot not found.");
 }
 
+// Initialize variables
+$message = "";
+$status = "";
+
 // Check if slot is already booked for this date
 $sql = "SELECT id FROM appointment_requests 
         WHERE doctor_id = ? AND slot_id = ? AND appointment_date = ? 
@@ -70,7 +74,7 @@ if ($result->num_rows > 0) {
     $message = "This time slot has already been booked. Please select another time slot.";
     $status = "error";
 } else {
-    // Process the appointment request
+    // Process the appointment request when form is submitted
     if (isset($_POST['confirm'])) {
         // Insert into database
         $sql = "INSERT INTO appointment_requests (user_id, doctor_id, slot_id, appointment_date, status) 
@@ -132,6 +136,7 @@ $user = $result->fetch_assoc();
             font-weight: 600;
             position: relative;
             padding-bottom: 1rem;
+            text-align: center;
         }
 
         .page-title::after {
@@ -303,9 +308,9 @@ $user = $result->fetch_assoc();
 <body>
 
 <div class="confirmation-container">
-    <h2 class="text-center page-title">Appointment Confirmation</h2>
+    <h2 class="page-title">Appointment Confirmation</h2>
     
-    <?php if (isset($message)): ?>
+    <?php if (isset($message) && !empty($message)): ?>
         <div class="message-box <?php echo $status === 'success' ? 'success-message' : 'error-message'; ?>">
             <i class="fas <?php echo $status === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
             <div>
@@ -380,13 +385,14 @@ $user = $result->fetch_assoc();
                     <li>Bring any relevant medical records or test results to your appointment.</li>
                     <li>Your appointment request will be reviewed by the doctor and you will receive a confirmation.</li>
                     <li>You can cancel your appointment up to 24 hours before the scheduled time.</li>
+                    <li>If you need to reschedule, please contact the clinic directly.</li>
                 </ul>
             </div>
             
             <?php if (!isset($message) || $status !== 'success'): ?>
                 <form method="POST" action="confirm_appointment.php?doctor_id=<?php echo $doctor_id; ?>&appointment_date=<?php echo $appointment_date; ?>&slot_id=<?php echo $slot_id; ?>">
                     <div class="btn-container">
-                        <a href="book_appointment_page.php?doctor_id=<?php echo $doctor_id; ?>&appointment_date=<?php echo $appointment_date; ?>" class="btn btn-back">
+                        <a href="book_slot.php?doctor_id=<?php echo $doctor_id; ?>&appointment_date=<?php echo $appointment_date; ?>" class="btn btn-back">
                             <i class="fas fa-arrow-left me-2"></i>Select Another Time
                         </a>
                         
@@ -397,7 +403,7 @@ $user = $result->fetch_assoc();
                 </form>
             <?php else: ?>
                 <div class="btn-container">
-                    <a href="patient_dashboard.php" class="btn btn-confirm">
+                    <a href="browsedoct.php" class="btn btn-confirm">
                         <i class="fas fa-home me-2"></i>Go to Dashboard
                     </a>
                 </div>
@@ -407,6 +413,5 @@ $user = $result->fetch_assoc();
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-
 </body>
 </html>
