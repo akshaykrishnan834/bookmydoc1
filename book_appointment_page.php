@@ -3,6 +3,9 @@ session_start();
 include('db_connection.php'); 
 include('patientheader2.php');
 
+// Set timezone to handle time comparisons correctly
+date_default_timezone_set('Asia/Kolkata'); // Change to your timezone if needed
+
 // Ensure doctor_id and appointment_date are passed
 if (!isset($_GET['doctor_id']) || !isset($_GET['appointment_date'])) {
     die("Invalid request. Doctor ID and appointment date are required.");
@@ -22,8 +25,10 @@ if ($appointment_date < $today) {
     die("Cannot book appointments for past dates.");
 }
 
-$currentTime = date('H:i:s'); // Add this line to get the current time
-
+// Get current time as DateTime object for reliable comparison
+$currentDate = date('Y-m-d');
+$currentTime = date('H:i:s');
+$currentDateTime = new DateTime(); // Creates DateTime object with current time
 
 // Fetch doctor details
 $sql = "SELECT name, specialization FROM doctorreg WHERE id = ?";
@@ -37,6 +42,7 @@ if (!$doctor) {
     die("Doctor not found.");
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -269,6 +275,11 @@ if (!$doctor) {
             transform: none;
             box-shadow: none;
         }
+
+        .highlight-red {
+            background-color: #f9e0e0 !important;
+            border: 1px solid #e74c3c !important;
+        }
     </style>
 </head>
 <body>
@@ -298,11 +309,12 @@ if (!$doctor) {
         </div>
 
         <?php
-        // Fetch available slots from database for the selected doctor and date
-        $sql = "SELECT id, start_time, end_time
-               FROM doctor_availability 
-               WHERE doctor_id = ? 
-               ORDER BY start_time ASC";
+        // Get all time slots
+        $sql = "SELECT id, start_time, end_time 
+                FROM doctor_availability 
+                WHERE doctor_id = ? 
+                ORDER BY start_time ASC";
+        
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $doctor_id);
         $stmt->execute();
@@ -310,52 +322,64 @@ if (!$doctor) {
         
         // Check if there are existing appointments for these slots
         $bookedSlots = [];
-        $appointmentSql = "SELECT id FROM doctor_availability WHERE doctor_id = ? ";
+        $appointmentSql = "SELECT slot_id FROM appointment_requests WHERE doctor_id = ? AND appointment_date = ?";
         $apptStmt = $conn->prepare($appointmentSql);
-        $apptStmt->bind_param("i", $doctor_id, );
+        $apptStmt->bind_param("is", $doctor_id, $appointment_date);
         $apptStmt->execute();
         $apptResult = $apptStmt->get_result();
         
-        
+        while ($appt = $apptResult->fetch_assoc()) {
+            $bookedSlots[] = $appt['slot_id'];
+        }
         
         if ($result->num_rows > 0) {
             echo '<div class="time-slots-grid">';
-            
-            $currentTime = date('H:i:s');
             
             while ($row = $result->fetch_assoc()) {
                 $slot_id = $row['id'];
                 $start_time = $row['start_time'];
                 $end_time = $row['end_time'];
-            
-                // Check if slot is in the past for today's date
-                $isPastSlot = ($appointment_date == $today && $start_time < $currentTime);
-            
-                // Skip rendering past slots
-                if ($isPastSlot) {
-                    continue;
-                }
-            
+                
                 // Check if slot is already booked
                 $isBooked = in_array($slot_id, $bookedSlots);
-            
-                // Determine if slot is available
-                $isAvailable = !$isBooked;
-                $slotClass = $isAvailable ? '' : 'unavailable';
-            
+                
+                // Check if slot is in the past (for current date)
+                $isPastSlot = false;
+                
+                if ($appointment_date == $currentDate) {
+                    // Create DateTime object for the slot's start time today
+                    $slotDateTime = new DateTime($appointment_date . ' ' . $start_time);
+                    
+                    // Compare with current time using DateTime comparison
+                    if ($slotDateTime <= $currentDateTime) {
+                        $isPastSlot = true;
+                    }
+                }
+                
+                // Determine class for the slot
+                $slotClass = '';
+                if ($isPastSlot || $isBooked) {
+                    $slotClass = 'unavailable';
+                    // Add highlight-red class for past slots
+                    if ($isPastSlot) {
+                        $slotClass .= ' highlight-red';
+                    }
+                }
+                
                 echo "<div class='time-slot $slotClass' data-slot-id='$slot_id'>";
                 echo "<i class='far fa-clock'></i>";
                 echo "<div class='time-slot-time'>" . date('g:i A', strtotime($start_time)) . " - " . date('g:i A', strtotime($end_time)) . "</div>";
-            
-                if ($isAvailable) {
-                    echo "<div class='availability'>Available</div>";
-                } else {
+                
+                if ($isPastSlot) {
+                    echo "<div class='availability'>Past Time</div>";
+                } else if ($isBooked) {
                     echo "<div class='availability'>Booked</div>";
+                } else {
+                    echo "<div class='availability'>Available</div>";
                 }
-            
+                
                 echo "</div>";
             }
-            
             
             echo '</div>';
         } else {

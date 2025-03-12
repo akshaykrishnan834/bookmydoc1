@@ -55,7 +55,7 @@ $result = mysqli_query($conn, $query);
                                 <th>Specialization</th>
                                 <th>Contact</th>
                                 <th>Status</th>
-                                
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -82,7 +82,11 @@ $result = mysqli_query($conn, $query);
                                     </span>
                                 </td>
                                 <td>
-                                    
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                onclick="confirmDelete(<?php echo $doctor['id']; ?>)">
+                                            <i class="fas fa-trash-alt"></i> Delete
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -196,6 +200,18 @@ $result = mysqli_query($conn, $query);
 
         .modal-footer {
             border-top: 1px solid #edf2f9;
+        }
+        
+        /* Delete Button Styles */
+        .btn-outline-danger {
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+        
+        .btn-outline-danger:hover {
+            color: #fff;
+            background-color: #dc3545;
+            border-color: #dc3545;
         }
     </style>
 

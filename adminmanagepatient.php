@@ -26,7 +26,7 @@ $total_records = mysqli_fetch_assoc($count_result)['total'];
 $total_pages = ceil($total_records / $records_per_page);
 
 // Fetch patients
-$query = "SELECT * FROM patientreg 
+$query = "SELECT * FROM patientreg $where_clause
           LIMIT $offset, $records_per_page";
 $result = mysqli_query($conn, $query);
 ?>
@@ -50,7 +50,17 @@ $result = mysqli_query($conn, $query);
                         <h2 class="page-title">Manage Patients</h2>
                         <p class="text-muted">View and manage registered patients</p>
                     </div>
-                   
+                    
+                    <!-- Added Search Form -->
+                    <div class="search-form d-flex">
+                        <form action="" method="GET" class="d-flex">
+                            <input type="text" name="search" class="form-control" placeholder="Search patients..." 
+                                   value="<?php echo htmlspecialchars($search); ?>">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -74,7 +84,7 @@ $result = mysqli_query($conn, $query);
                                 <th>Patient Name</th>
                                 <th>Contact Information</th>
                                 <th>Age/Gender</th>
-                                
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -100,7 +110,12 @@ $result = mysqli_query($conn, $query);
                                     <div><?php echo $patient['age']; ?> years</div>
                                     <div class="text-muted small"><?php echo $patient['gender']; ?></div>
                                 </td>
-                                  
+                                <td>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                onclick="confirmDelete(<?php echo $patient['id']; ?>)">
+                                            <i class="fas fa-trash-alt"></i> Delete
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -275,12 +290,14 @@ $result = mysqli_query($conn, $query);
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Function to open delete confirmation modal with patient id
         function confirmDelete(id) {
             const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
             document.getElementById('confirmDelete').href = `manage_patients.php?delete=${id}`;
             modal.show();
         }
 
+        // Function to export patient data
         function exportToExcel() {
             // Implement Excel export functionality
             window.location.href = 'export_patients.php';

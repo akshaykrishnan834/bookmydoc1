@@ -146,7 +146,7 @@ $endDate = date('Y-m-d', strtotime('+30 days'));
             transition: all 0.2s ease;
         }
 
-        .date-item:hover:not(.disabled) {
+        .date-item:hover:not(.disabled):not(.empty) {
             background-color: #e8f4fd;
             transform: scale(1.05);
         }
@@ -160,6 +160,10 @@ $endDate = date('Y-m-d', strtotime('+30 days'));
             color: #ccc;
             background-color: #f5f5f5;
             cursor: not-allowed;
+        }
+        
+        .date-item.empty {
+            cursor: default;
         }
 
         .date-item .day-number {
@@ -201,6 +205,34 @@ $endDate = date('Y-m-d', strtotime('+30 days'));
             background-color: #e8f4fd;
             border-radius: 8px;
         }
+        
+        /* Month navigation */
+        .month-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .month-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .month-nav-btn {
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .month-nav-btn:hover {
+            color: var(--primary-color);
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
@@ -225,6 +257,16 @@ $endDate = date('Y-m-d', strtotime('+30 days'));
         </div>
 
         <div class="calendar">
+            <?php
+            // Get current month and year
+            $currentMonth = date('F');
+            $currentYear = date('Y');
+            ?>
+            
+            <div class="month-nav">
+                <div class="month-title"><?php echo $currentMonth . ' ' . $currentYear; ?></div>
+            </div>
+            
             <div class="date-grid">
                 <?php
                 // Display day names
@@ -233,31 +275,37 @@ $endDate = date('Y-m-d', strtotime('+30 days'));
                     echo "<div class='weekday-header'>$day</div>";
                 }
 
-                // Get the first day of the current month
-                $firstDayOfMonth = date('Y-m-01');
-                $firstDayWeekday = date('w', strtotime($firstDayOfMonth));
-                
+                // Calculate the first date to display (may be from previous month)
+                $firstDate = new DateTime($today);
+                $firstDate->modify('first day of this month');
+                $firstDayOfMonthWeekday = (int)$firstDate->format('w'); // 0 (Sunday) to 6 (Saturday)
+
                 // Add empty slots for days before the first day of the month
-                for ($i = 0; $i < $firstDayWeekday; $i++) {
-                    echo "<div></div>";
+                for ($i = 0; $i < $firstDayOfMonthWeekday; $i++) {
+                    echo "<div class='date-item empty'></div>";
                 }
 
-                // Generate next 30 days
+                // Generate calendar dates
                 $currentDate = new DateTime($today);
+                $currentDate->modify('first day of this month'); // Start from the first day of current month
                 $endDateObj = new DateTime($endDate);
+                $lastDayOfMonth = new DateTime($today);
+                $lastDayOfMonth->modify('last day of this month');
                 
-                while ($currentDate <= $endDateObj) {
+                // First, render all days of the current month
+                while ($currentDate <= $lastDayOfMonth) {
                     $dateStr = $currentDate->format('Y-m-d');
                     $dayNumber = $currentDate->format('j');
                     $monthText = $currentDate->format('M');
                     $isToday = $dateStr === $today;
+                    $isPast = $currentDate < new DateTime($today);
                     
                     // Check if this date has any available slots
                     // In a real app, you would query the database to check availability
-                    $hasAvailability = true; // Placeholder logic
+                    $hasAvailability = !$isPast; // For example: past dates are not available
                     
                     $class = $isToday ? 'active' : '';
-                    $class = !$hasAvailability ? 'disabled' : $class;
+                    $class = (!$hasAvailability || $currentDate > $endDateObj) ? 'disabled' : $class;
                     
                     echo "<div class='date-item $class' data-date='$dateStr'>";
                     echo "<div class='day-number'>$dayNumber</div>";
@@ -265,6 +313,29 @@ $endDate = date('Y-m-d', strtotime('+30 days'));
                     echo "</div>";
                     
                     $currentDate->modify('+1 day');
+                }
+                
+                // Fill in the remaining cells to complete the grid if necessary
+                $lastDayWeekday = (int)$lastDayOfMonth->format('w');
+                if ($lastDayWeekday < 6) {
+                    $remainingCells = 6 - $lastDayWeekday;
+                    for ($i = 0; $i < $remainingCells; $i++) {
+                        // Display days from next month if they're within our 30-day window
+                        if ($currentDate <= $endDateObj) {
+                            $dateStr = $currentDate->format('Y-m-d');
+                            $dayNumber = $currentDate->format('j');
+                            $monthText = $currentDate->format('M');
+                            
+                            echo "<div class='date-item' data-date='$dateStr'>";
+                            echo "<div class='day-number'>$dayNumber</div>";
+                            echo "<div class='month-text'>$monthText</div>";
+                            echo "</div>";
+                            
+                            $currentDate->modify('+1 day');
+                        } else {
+                            echo "<div class='date-item empty'></div>";
+                        }
+                    }
                 }
                 ?>
             </div>
@@ -287,7 +358,7 @@ $endDate = date('Y-m-d', strtotime('+30 days'));
 <script>
 $(document).ready(function() {
     // Handle date selection
-    $('.date-item:not(.disabled)').click(function() {
+    $('.date-item:not(.disabled):not(.empty)').click(function() {
         // Remove active class from all dates
         $('.date-item').removeClass('active');
         
