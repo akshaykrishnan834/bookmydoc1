@@ -5,9 +5,10 @@ include('patientheader.php'); // Assuming this is the patient dashboard header
 // Assuming user ID is stored in session after login
 $patient_id = $_SESSION['id'] ?? null;
 
-// Fetch patient's appointment details
+// Fetch patient's appointment details with payment status
 $sql = "SELECT ar.id, d.name AS doctor_name, d.specialization, ar.appointment_date,
-                da.start_time, da.end_time, ar.status, ar.created_at
+                da.start_time, da.end_time, ar.status, ar.created_at,
+                (SELECT COUNT(*) FROM payments WHERE appointment_id = ar.id AND status = 'success') AS payment_done
         FROM appointment_requests ar
         JOIN doctorreg d ON ar.doctor_id = d.id
         JOIN doctor_availability da ON ar.slot_id = da.id
@@ -49,6 +50,14 @@ while ($row = $result->fetch_assoc()) {
             background-color: #2980b9;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .payment-done {
+            background-color: #27ae60;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-weight: 500;
+            display: inline-block;
         }
     </style>
 </head>
@@ -92,9 +101,15 @@ while ($row = $result->fetch_assoc()) {
                             <td><?php echo $app['created_at'] ?? 'N/A'; ?></td>
                             <td>
                                 <?php if ($app['status'] === 'Approved'): ?>
-                                    <a href="payment.php?appointment_id=<?php echo $app['id']; ?>" class="btn btn-payment">
-                                        <i class="fas fa-credit-card"></i> Proceed to Payment
-                                    </a>
+                                    <?php if ($app['payment_done'] > 0): ?>
+                                        <span class="payment-done">
+                                            <i class="fas fa-check-circle"></i> Payment Done
+                                        </span>
+                                    <?php else: ?>
+                                        <a href="payment.php?appointment_id=<?php echo $app['id']; ?>" class="btn btn-payment">
+                                            <i class="fas fa-credit-card"></i> Proceed to Payment
+                                        </a>
+                                    <?php endif; ?>
                                 <?php else: ?>
                                     <span class="text-muted">No action needed</span>
                                 <?php endif; ?>
