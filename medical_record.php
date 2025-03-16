@@ -326,8 +326,11 @@ $result = $stmt->get_result();
                         <i class="fas fa-folder-open"></i>
                     </div>
                     <div class="empty-text">You haven't uploaded any medical records yet.</div>
-                    <a href="upload_medical_record.php" class="upload-btn">
+                    <a href="addmedicalrecords.php" class="upload-btn">
                         <i class="fas fa-plus"></i> Upload Your First Record
+                    </a>
+                    <a href="display_patients.php" class="upload-btn">
+                        Back to Profile
                     </a>
                 </div>
             <?php endif; ?>

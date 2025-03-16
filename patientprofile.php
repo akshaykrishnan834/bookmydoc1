@@ -365,11 +365,7 @@ $tele_slots = [
         
         
                         
-                        <div class="text-center mt-3">
-                            <a href="telemedicine.php" class="btn btn-primary">View All Telemedicine Options</a>
-                        </div>
-                    </div>
-                </div>
+                        
                 
                 
             </div>
