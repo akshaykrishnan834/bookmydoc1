@@ -345,7 +345,7 @@ $tele_slots = [
                         </div>
                         <h5 class="card-title">Medical Records</h5>
                         <p class="card-text">Access your health documents</p>
-                        <a href="medical_records.php" class="btn btn-primary">View Records</a>
+                        <a href="medical_record.php" class="btn btn-primary">View Records</a>
                     </div>
                 </div>
             </div>

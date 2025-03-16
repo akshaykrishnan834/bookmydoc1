@@ -2,10 +2,8 @@
 session_start();
 include('db_connection.php');
 
-
 // Check if user is logged in
 if (!isset($_SESSION['id'])) {
-    // Redirect to login page if not logged in
     header("Location: login.php");
     exit();
 }
@@ -17,7 +15,6 @@ if (!isset($_GET['doctor_id']) || !isset($_GET['appointment_date']) || !isset($_
     die("Invalid request. Missing required parameters.");
 }
 
-// Get and sanitize parameters
 $doctor_id = intval($_GET['doctor_id']);
 $appointment_date = $_GET['appointment_date'];
 $slot_id = intval($_GET['slot_id']);
@@ -72,12 +69,14 @@ if ($result->num_rows > 0) {
 } else {
     // Process the appointment request
     if (isset($_POST['confirm'])) {
+        $patient_condition = isset($_POST['patient_condition']) ? trim($_POST['patient_condition']) : '';
+
         // Insert into database
-        $sql = "INSERT INTO appointment_requests (user_id, doctor_id, slot_id, appointment_date, status) 
-                VALUES (?, ?, ?, ?, 'Pending')";
+        $sql = "INSERT INTO appointment_requests (user_id, doctor_id, slot_id, appointment_date, patient_condition, status) 
+                VALUES (?, ?, ?, ?, ?, 'Pending')";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("iiis", $user_id, $doctor_id, $slot_id, $appointment_date);
-        
+        $stmt->bind_param("iiiss", $user_id, $doctor_id, $slot_id, $appointment_date, $patient_condition);
+
         if ($stmt->execute()) {
             $message = "Your appointment request has been submitted successfully. You will be notified once it's approved.";
             $status = "success";
@@ -113,6 +112,7 @@ $user = $result->fetch_assoc();
             --success-color: #2ecc71;
             --error-color: #e74c3c;
             --background-color: #f8f9fa;
+            --light-grey: #95a5a6;
         }
 
         body {
@@ -132,24 +132,24 @@ $user = $result->fetch_assoc();
             font-weight: 600;
             position: relative;
             padding-bottom: 1rem;
+            text-align: center;
         }
 
-        .page-title::after {
+        .page-title:after {
             content: '';
             position: absolute;
+            width: 70px;
+            height: 3px;
+            background-color: var(--secondary-color);
             bottom: 0;
             left: 50%;
             transform: translateX(-50%);
-            width: 100px;
-            height: 3px;
-            background-color: var(--secondary-color);
         }
 
         .confirmation-card {
             background: white;
             border-radius: 15px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            border: none;
             overflow: hidden;
         }
 
@@ -157,9 +157,9 @@ $user = $result->fetch_assoc();
             background-color: var(--secondary-color);
             color: white;
             padding: 1.5rem;
-            border-bottom: none;
             font-weight: 600;
-            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
         }
 
         .appointment-details {
@@ -172,65 +172,45 @@ $user = $result->fetch_assoc();
             align-items: flex-start;
         }
 
-        .detail-icon {
-            width: 40px;
-            height: 40px;
-            background-color: #e8f4fd;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 1rem;
-            flex-shrink: 0;
-        }
-
-        .detail-icon i {
-            color: var(--secondary-color);
-        }
-
-        .detail-content {
-            flex-grow: 1;
-        }
-
         .detail-label {
             font-weight: 600;
             color: var(--primary-color);
-            margin-bottom: 0.2rem;
-        }
-
-        .detail-value {
-            color: #666;
+            margin-bottom: 0.5rem;
         }
 
         .message-box {
             padding: 1rem;
             border-radius: 8px;
             margin-bottom: 1.5rem;
-            display: flex;
-            align-items: flex-start;
-        }
-
-        .message-box i {
-            margin-right: 1rem;
-            font-size: 1.5rem;
         }
 
         .success-message {
             background-color: rgba(46, 204, 113, 0.1);
             border: 1px solid var(--success-color);
-        }
-
-        .success-message i {
             color: var(--success-color);
         }
 
         .error-message {
             background-color: rgba(231, 76, 60, 0.1);
             border: 1px solid var(--error-color);
+            color: var(--error-color);
         }
 
-        .error-message i {
-            color: var(--error-color);
+        .detail-icon {
+            width: 40px;
+            height: 40px;
+            background-color: rgba(52, 152, 219, 0.1);
+            color: var(--secondary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .detail-content {
+            flex-grow: 1;
         }
 
         .btn-container {
@@ -239,89 +219,102 @@ $user = $result->fetch_assoc();
             margin-top: 2rem;
         }
 
-        .btn-back {
-            background-color: #95a5a6;
-            color: white;
-            border: none;
-            padding: 0.8rem 2rem;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .btn-back:hover {
-            background-color: #7f8c8d;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(127, 140, 141, 0.3);
-        }
-
         .btn-confirm {
             background-color: var(--secondary-color);
             color: white;
-            border: none;
             padding: 0.8rem 2rem;
             border-radius: 8px;
-            font-weight: 500;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: all 0.3s ease;
         }
 
         .btn-confirm:hover {
             background-color: #2980b9;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
         }
 
-        .divider {
-            height: 1px;
-            background-color: #eee;
-            margin: 2rem 0;
-        }
-
-        .terms {
-            background-color: #f8f9fa;
-            padding: 1rem;
+        .btn-back {
+            background-color: var(--light-grey);
+            color: white;
+            padding: 0.8rem 2rem;
             border-radius: 8px;
-            margin-top: 1.5rem;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
         }
 
-        .terms-title {
-            font-weight: 600;
+        .btn-back:hover {
+            background-color: #7f8c8d;
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .important-notes {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .notes-title {
+            display: flex;
+            align-items: center;
             color: var(--primary-color);
-            margin-bottom: 0.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
         }
 
-        .terms-list {
+        .notes-title i {
+            margin-right: 10px;
+            color: var(--secondary-color);
+        }
+
+        .notes-list {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 0;
+        }
+
+        .notes-list li {
+            position: relative;
             padding-left: 1.5rem;
-            color: #666;
+            margin-bottom: 0.8rem;
+            line-height: 1.5;
         }
 
-        .terms-list li {
-            margin-bottom: 0.5rem;
+        .notes-list li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--secondary-color);
+        }
+
+        .notes-list li:last-child {
+            margin-bottom: 0;
         }
     </style>
 </head>
 <body>
 
 <div class="confirmation-container">
-    <h2 class="text-center page-title">Appointment Confirmation</h2>
+    <h2 class="page-title">Appointment Confirmation</h2>
     
     <?php if (isset($message)): ?>
         <div class="message-box <?php echo $status === 'success' ? 'success-message' : 'error-message'; ?>">
-            <i class="fas <?php echo $status === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
-            <div>
-                <h5><?php echo $status === 'success' ? 'Success!' : 'Error!'; ?></h5>
-                <p><?php echo $message; ?></p>
-                <?php if ($status === 'success'): ?>
-                    <p>You can view your appointment status in your dashboard.</p>
-                <?php endif; ?>
-            </div>
+            <p><?php echo $message; ?></p>
         </div>
     <?php endif; ?>
     
     <div class="card confirmation-card">
         <div class="card-header">
-            <i class="fas fa-calendar-check me-2"></i>
-            Review Your Appointment Details
+            <i class="fas fa-calendar-check me-2"></i> Review Your Appointment Details
         </div>
         
         <div class="appointment-details">
@@ -331,60 +324,70 @@ $user = $result->fetch_assoc();
                 </div>
                 <div class="detail-content">
                     <div class="detail-label">Doctor</div>
-                    <div class="detail-value">Dr. <?php echo htmlspecialchars($doctor['name']); ?></div>
-                    <div class="detail-value text-muted"><?php echo htmlspecialchars($doctor['specialization']); ?></div>
+                    <div>Dr. <?php echo htmlspecialchars($doctor['name']); ?></div>
+                    <div><?php echo htmlspecialchars($doctor['specialization']); ?></div>
                 </div>
             </div>
-            
+
             <div class="detail-row">
                 <div class="detail-icon">
-                    <i class="far fa-calendar-alt"></i>
+                    <i class="fas fa-calendar-alt"></i>
                 </div>
                 <div class="detail-content">
                     <div class="detail-label">Date</div>
-                    <div class="detail-value"><?php echo date('l, F j, Y', strtotime($appointment_date)); ?></div>
+                    <div><?php echo date('l, F j, Y', strtotime($appointment_date)); ?></div>
                 </div>
             </div>
-            
+
             <div class="detail-row">
                 <div class="detail-icon">
-                    <i class="far fa-clock"></i>
+                    <i class="fas fa-clock"></i>
                 </div>
                 <div class="detail-content">
                     <div class="detail-label">Time</div>
-                    <div class="detail-value">
+                    <div>
                         <?php echo date('g:i A', strtotime($slot['start_time'])); ?> - 
                         <?php echo date('g:i A', strtotime($slot['end_time'])); ?>
                     </div>
                 </div>
             </div>
-            
+
             <div class="detail-row">
                 <div class="detail-icon">
                     <i class="fas fa-user"></i>
                 </div>
                 <div class="detail-content">
                     <div class="detail-label">Patient Information</div>
-                    <div class="detail-value"><?php echo htmlspecialchars($user['name']); ?></div>
-                    <div class="detail-value text-muted"><?php echo htmlspecialchars($user['email']); ?></div>
-                    <div class="detail-value text-muted"><?php echo htmlspecialchars($user['phone']); ?></div>
+                    <div><?php echo htmlspecialchars($user['name']); ?></div>
+                    <div><?php echo htmlspecialchars($user['email']); ?></div>
+                    <div><?php echo htmlspecialchars($user['phone']); ?></div>
                 </div>
             </div>
-            
-            <div class="divider"></div>
-            
-            <div class="terms">
-                <div class="terms-title"><i class="fas fa-info-circle me-2"></i>Important Notes</div>
-                <ul class="terms-list">
-                    <li>Please arrive 15 minutes before your scheduled appointment time.</li>
-                    <li>Bring any relevant medical records or test results to your appointment.</li>
-                    <li>Your appointment request will be reviewed by the doctor and you will receive a confirmation.</li>
-                    <li>You can cancel your appointment up to 24 hours before the scheduled time.</li>
-                </ul>
-            </div>
-            
-            <?php if (!isset($message) || $status !== 'success'): ?>
-                <form method="POST" action="confirm_appointment.php?doctor_id=<?php echo $doctor_id; ?>&appointment_date=<?php echo $appointment_date; ?>&slot_id=<?php echo $slot_id; ?>">
+
+            <form method="POST" action="confirm_appointment.php?doctor_id=<?php echo $doctor_id; ?>&appointment_date=<?php echo $appointment_date; ?>&slot_id=<?php echo $slot_id; ?>">
+                <div class="detail-row">
+                    <div class="detail-icon">
+                        <i class="fas fa-notes-medical"></i>
+                    </div>
+                    <div class="detail-content w-100">
+                        <div class="detail-label">Patient Condition (Optional)</div>
+                        <textarea name="patient_condition" class="form-control" rows="3" placeholder="Describe your condition..."></textarea>
+                    </div>
+                </div>
+
+                <div class="important-notes">
+                    <div class="notes-title">
+                        <i class="fas fa-info-circle"></i> Important Notes
+                    </div>
+                    <ul class="notes-list">
+                        <li>Please arrive 15 minutes before your scheduled appointment time.</li>
+                        <li>Bring any relevant medical records or test results to your appointment.</li>
+                        <li>Your appointment request will be reviewed by the doctor and you will receive a confirmation.</li>
+                        <li>You can cancel your appointment up to 24 hours before the scheduled time.</li>
+                    </ul>
+                </div>
+ 
+                <?php if (!isset($message) || $status !== 'success'): ?>
                     <div class="btn-container">
                         <a href="book_appointment_page.php?doctor_id=<?php echo $doctor_id; ?>&appointment_date=<?php echo $appointment_date; ?>" class="btn btn-back">
                             <i class="fas fa-arrow-left me-2"></i>Select Another Time
@@ -394,19 +397,17 @@ $user = $result->fetch_assoc();
                             <i class="fas fa-check-circle me-2"></i>Confirm Appointment
                         </button>
                     </div>
-                </form>
-            <?php else: ?>
-                <div class="btn-container">
-                    <a href="patient_dashboard.php" class="btn btn-confirm">
-                        <i class="fas fa-home me-2"></i>Go to Dashboard
-                    </a>
-                </div>
-            <?php endif; ?>
+                <?php else: ?>
+                    <div class="btn-container">
+                        <a href="appointmentstat.php" class="btn btn-confirm">
+                            <i class="fas fa-home me-2"></i>Go to Dashboard
+                        </a>
+                    </div>
+                <?php endif; ?>
+            </form>
         </div>
     </div>
 </div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
 </body>
 </html>

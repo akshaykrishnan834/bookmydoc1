@@ -332,10 +332,7 @@ if (isset($_GET['success']) && $_GET['success'] == 'true') {
                         <input type="radio" name="payment_method" value="Credit/Debit Card" checked>
                         Credit/Debit Card
                     </label>
-                    <label class="payment-option">
-                        <input type="radio" name="payment_method" value="UPI">
-                        UPI Payment
-                    </label>
+                    
                     <label class="payment-option">
                         <input type="radio" name="payment_method" value="Net Banking">
                         Net Banking

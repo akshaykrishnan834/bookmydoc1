@@ -392,7 +392,7 @@ $user = $result->fetch_assoc();
             <?php if (!isset($message) || $status !== 'success'): ?>
                 <form method="POST" action="confirm_appointment.php?doctor_id=<?php echo $doctor_id; ?>&appointment_date=<?php echo $appointment_date; ?>&slot_id=<?php echo $slot_id; ?>">
                     <div class="btn-container">
-                        <a href="book_slot.php?doctor_id=<?php echo $doctor_id; ?>&appointment_date=<?php echo $appointment_date; ?>" class="btn btn-back">
+                        <a href="book_appointment_page.php?doctor_id=<?php echo $doctor_id; ?>&appointment_date=<?php echo $appointment_date; ?>" class="btn btn-back">
                             <i class="fas fa-arrow-left me-2"></i>Select Another Time
                         </a>
                         

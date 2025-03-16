@@ -67,7 +67,11 @@ $profilePic = !empty($row['profile_pic']) ? $row['profile_pic'] : 'default-profi
                             <i class="far fa-calendar-check me-1"></i>Appointment Stat
                         </a>
                     </li>
-                    
+                    <li class="nav-item">
+                        <a class="nav-link" href="paymenthistory.php">
+                            <i class="far fa-calendar-check me-1"></i>Payment Stat
+                        </a>
+                    </li>
                 </ul>
                 <div class="nav-right d-flex align-items-center">
                 <div class="nav-right d-flex align-items-center">

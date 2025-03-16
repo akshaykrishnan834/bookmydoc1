@@ -274,6 +274,9 @@ $conn->close();
                         <a href="patientprofilepic.php" class="profile-btn change-photo-btn">
                             <i class="fas fa-camera"></i> Change Photo
                         </a>
+                        <a href="medical_record.php" class="profile-btn reset-contact-btn">
+                            <i class="fas fa-address-card"></i> Medical Records
+                        </a>
                     </div>
                 </div>
             </div>
