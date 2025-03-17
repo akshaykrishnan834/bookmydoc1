@@ -1,17 +1,19 @@
-<?php 
-include('db_connection.php'); 
-include('patientheader.php'); // Assuming this is the patient dashboard header
+<?php
+session_start();
+require 'db_connection.php'; // Include your database connection file
+include'patientheader2.php';
 
-// Assuming user ID is stored in session after login
-$patient_id = $_SESSION['id'] ?? null;
+if (!isset($_SESSION['id'])) {
+    die("Unauthorized access");
+}
 
-// Fetch patient's appointment details with payment status
-$sql = "SELECT ar.id, d.name AS doctor_name, d.specialization, ar.appointment_date,
-                da.start_time, da.end_time, ar.status, ar.created_at, ar.patient_condition,
-                (SELECT COUNT(*) FROM payments WHERE appointment_id = ar.id AND status = 'success') AS payment_done
+$patient_id = $_SESSION['id'];
+
+$sql = "SELECT ar.id, ar.appointment_date, ar.status, ar.payment_status, ar.patient_condition, 
+               d.name AS doctor_name, s.start_time, s.end_time
         FROM appointment_requests ar
         JOIN doctorreg d ON ar.doctor_id = d.id
-        JOIN doctor_availability da ON ar.slot_id = da.id
+        JOIN doctor_availability s ON ar.slot_id = s.id
         WHERE ar.user_id = ?
         ORDER BY ar.appointment_date DESC";
 
@@ -19,474 +21,374 @@ $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $patient_id);
 $stmt->execute();
 $result = $stmt->get_result();
-
-$appointments = [];
-while ($row = $result->fetch_assoc()) {
-    $appointments[] = $row;
-}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Appointments</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            background-color: #f5f7fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        .appointments-container {
-            max-width: 1100px;
-            margin: 40px auto;
-            position: relative;
-        }
-        
-        .page-title {
-            color: #2c3e50;
-            font-weight: 700;
-            margin-bottom: 30px;
-            position: relative;
-            display: inline-block;
-            padding-bottom: 8px;
-        }
-        
-        .page-title::after {
-            content: '';
-            position: absolute;
-            width: 60%;
-            height: 4px;
-            background: linear-gradient(90deg, #3498db, #1abc9c);
-            bottom: 0;
-            left: 0;
-            border-radius: 10px;
-        }
-        
-        .appointment-card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-            transition: transform 0.3s ease;
-            margin-bottom: 30px;
-        }
-        
-        .appointment-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .card-header {
-            background: linear-gradient(135deg, #3498db, #1abc9c);
-            color: white;
-            font-weight: 600;
-            border: none;
-            padding: 20px;
-        }
-        
-        .table {
-            margin-bottom: 0;
-        }
-        
-        .table thead th {
-            background-color: #f8f9fa;
-            color: #2c3e50;
-            font-weight: 600;
-            border-bottom: 2px solid #e9ecef;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
-            padding: 16px;
-        }
-        
-        .table tbody tr {
-            transition: all 0.3s ease;
-        }
-        
-        .table tbody tr:hover {
-            background-color: #f2f8fd;
-        }
-        
-        .table td {
-            padding: 18px 16px;
-            vertical-align: middle;
-            border-color: #f1f3f6;
-        }
-        
-        .doctor-name {
-            font-weight: 600;
-            color: #2c3e50;
-            display: flex;
-            align-items: center;
-        }
-        
-        .doctor-icon {
-            background-color: #e8f4fd;
-            color: #3498db;
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 10px;
-            font-size: 15px;
-        }
-        
-        .specialization {
-            padding: 4px 12px;
-            background-color: #edf7ff;
-            color: #3498db;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            display: inline-block;
-        }
-        
-        .date-time {
-            display: flex;
-            align-items: center;
-        }
-        
-        .date-icon, .time-icon {
-            margin-right: 8px;
-            color: #7f8c8d;
-        }
-        
-        .status-pending {
-            background-color: #fff9e6;
-            color: #f39c12;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 12px;
-            display: inline-flex;
-            align-items: center;
-        }
-        
-        .status-approved {
-            background-color: #eafaf1;
-            color: #27ae60;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 12px;
-            display: inline-flex;
-            align-items: center;
-        }
-        
-        .status-rejected {
-            background-color: #feeaec;
-            color: #e74c3c;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 12px;
-            display: inline-flex;
-            align-items: center;
-        }
-        
-        .status-icon {
-            margin-right: 5px;
-        }
-        
-        .btn-payment {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 50px;
-            font-weight: 500;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
-        }
-        
-        .btn-payment:hover {
-            background: linear-gradient(135deg, #2980b9, #3498db);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(52, 152, 219, 0.4);
-            color: white;
-        }
-        
-        .payment-done {
-            background-color: #27ae60;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 50px;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);
-        }
-        
-        .payment-icon {
-            margin-right: 8px;
-        }
-        
-        .no-appointments {
-            padding: 40px;
-            text-align: center;
-            color: #95a5a6;
-        }
-        
-        .no-appointments i {
-            font-size: 50px;
-            margin-bottom: 15px;
-            color: #bdc3c7;
-        }
-        
-        .created-date {
-            color: #7f8c8d;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-        }
-        
-        .created-icon {
-            margin-right: 5px;
-        }
-        
-        @media (max-width: 992px) {
-            .table-responsive {
-                border-radius: 15px;
-                overflow: hidden;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .appointments-container {
-                margin: 20px 10px;
-            }
-            
-            .table thead {
-                display: none;
-            }
-            
-            .table, .table tbody, .table tr, .table td {
-                display: block;
-                width: 100%;
-            }
-            
-            .table tr {
-                margin-bottom: 20px;
-                border-bottom: 2px solid #e9ecef;
-                padding-bottom: 10px;
-            }
-            
-            .table td {
-                text-align: right;
-                padding: 12px 15px;
-                position: relative;
-                border-top: none;
-            }
-            
-            .table td::before {
-                content: attr(data-label);
-                position: absolute;
-                left: 15px;
-                width: 50%;
-                text-align: left;
-                font-weight: 600;
-                color: #2c3e50;
-            }
-        }
-        .btn-cancel {
-    background: linear-gradient(135deg, #e74c3c, #c0392b);
+       <style>
+    body {
+        background-color: #f8f9fa;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .page-header {
+        background-color: transparent;
+        color: #333;
+        padding: 1.5rem 0 0.5rem;
+        margin-bottom: 0;
+        box-shadow: none;
+        border-radius: 0;
+    }
+    .table thead th {
+        background: linear-gradient(to right, #3498db, #2ac8dd);
     color: white;
+    font-weight: 600;
     border: none;
-    padding: 8px 16px;
-    border-radius: 50px;
-    font-weight: 500;
-    transition: all 0.3s;
-    display: inline-flex;
-    align-items: center;
-    box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
-    margin-left: 10px;
+    padding: 15px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.btn-cancel:hover {
-    background: linear-gradient(135deg, #c0392b, #e74c3c);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(231, 76, 60, 0.4);
-    color: white;
+/* Add this if you want subtle borders between header cells */
+.table thead th:not(:last-child) {
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
-
-.alert {
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
-
-.alert-success {
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-    color: #155724;
-}
-
-.alert-danger {
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-    color: #721c24;
-}
+    
+    .page-title {
+        font-weight: 600;
+        margin-bottom: 0;
+        color: #333;
+        border-bottom: 3px solid #2196F3;
+        display: inline-block;
+        padding-bottom: 5px;
+    }
+    
+    .appointments-container {
+        background-color: transparent;
+        box-shadow: none;
+        padding: 0;
+        margin-bottom: 30px;
+    }
+    
+    /* Appointment schedule header */
+    .appointment-header {
+        background-color: #2196F3;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px 5px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 20px;
+    }
+    
+    .appointment-title {
+        font-size: 18px;
+        font-weight: 500;
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .appointment-title i {
+        margin-right: 10px;
+    }
+    
+    .status-indicators {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .status-indicator {
+        display: flex;
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.2);
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 14px;
+    }
+    
+    .status-dot {
+        height: 10px;
+        width: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    
+    .status-pending .status-dot {
+        background-color: #FFC107;
+    }
+    
+    .status-approved .status-dot {
+        background-color: #4CAF50;
+    }
+    
+    .status-rejected .status-dot {
+        background-color: #F44336;
+    }
+    
+    /* Table styling */
+    .table {
+        border-collapse: separate;
+        border-spacing: 0;
+        border: none;
+        margin-bottom: 0;
+    }
+    
+    .table thead th {
+        background-color: #f5f5f5;
+        color: #555;
+        font-weight: 600;
+        border: none;
+        padding: 15px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .table tbody tr {
+        background-color: white;
+        transition: none;
+    }
+    
+    .table tbody tr:hover {
+        background-color: #f9f9f9;
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .table td {
+        padding: 15px;
+        vertical-align: middle;
+        border-top: 1px solid #f5f5f5;
+        font-size: 0.95rem;
+    }
+    
+    /* Doctor info */
+    .doctor-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .doctor-icon {
+        width: 32px;
+        height: 32px;
+        background-color: #E3F2FD;
+        color: #2196F3;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+    }
+    
+    /* Specialization badge */
+    .specialization {
+        background-color: #E3F2FD;
+        color: #2196F3;
+        border-radius: 20px;
+        padding: 5px 15px;
+        font-size: 13px;
+        display: inline-block;
+    }
+    
+    /* Date and time */
+    .date-time {
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+        gap: 5px;
+    }
+    
+    .time-slot {
+        color: inherit;
+        font-size: inherit;
+    }
+    
+    /* Status badges */
+    .status-badge {
+        padding: 0;
+        border-radius: 0;
+        background-color: transparent;
+    }
+    
+    .status-badge.status-pending {
+        color: #FFC107;
+        background-color: transparent;
+    }
+    
+    .status-badge.status-approved {
+        color: #4CAF50;
+        background-color: transparent;
+    }
+    
+    .status-badge.status-rejected {
+        color: #F44336;
+        background-color: transparent;
+    }
+    
+    /* Date with icon */
+    .date-with-icon {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #757575;
+    }
+    
+    /* Action buttons */
+    .btn {
+        border-radius: 4px;
+        padding: 6px 12px;
+    }
+    
+    .btn-outline-danger {
+        color: #dc3545;
+        border-color: #dc3545;
+        background-color: transparent;
+    }
+    
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 0.875rem;
+    }
+    
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 30px 20px;
+    }
+</style>
     </style>
 </head>
 <body>
-
-<div class="appointments-container">
-    <h2 class="page-title">My Appointments</h2>
-    
-    <div class="card appointment-card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <div>
-                <i class="fas fa-calendar-check me-2"></i> Your Appointment Schedule
-            </div>
-            <div class="d-flex align-items-center">
-                <div class="d-flex align-items-center me-3">
-                    <span class="status-pending me-2" style="font-size: 10px; padding: 4px 8px;">
-                        <i class="fas fa-clock status-icon"></i>
-                    </span>
-                    <small>Pending</small>
-                </div>
-                <div class="d-flex align-items-center me-3">
-                    <span class="status-approved me-2" style="font-size: 10px; padding: 4px 8px;">
-                        <i class="fas fa-check-circle status-icon"></i>
-                    </span>
-                    <small>Approved</small>
-                </div>
-                <div class="d-flex align-items-center">
-                    <span class="status-rejected me-2" style="font-size: 10px; padding: 4px 8px;">
-                        <i class="fas fa-times-circle status-icon"></i>
-                    </span>
-                    <small>Rejected</small>
-                </div>
-            </div>
+    <div class="page-header">
+        <div class="container">
+            <h2 class="page-title">My Appointments</h2>
+            <br><br>
         </div>
-        
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                <thead>
-    <tr>
-        <th>Doctor</th>
-        <th>Specialization</th>
-        <th>Date</th>
-        <th>Time</th>
-        <th>Condition</th>
-        <th>Status</th>
-        <th>Requested On</th>
-        <th>condition stat</th>
-    </tr>
-</thead>
-<tbody>
-    <?php if (!empty($appointments)): ?>
-        <?php foreach ($appointments as $app): ?>
-            <tr>
-                <td data-label="Doctor">
-                    <div class="doctor-name">
-                        <span class="doctor-icon">
-                            <i class="fas fa-user-md"></i>
-                        </span>
-                        <?php echo htmlspecialchars($app['doctor_name']); ?>
-                    </div>
-                </td>
-                <td data-label="Specialization">
-                    <span class="specialization">
-                        <?php echo htmlspecialchars($app['specialization']); ?>
-                    </span>
-                </td>
-                <td data-label="Date">
-                    <div class="date-time">
-                        <i class="fas fa-calendar-day date-icon"></i>
-                        <?php echo date('d M Y', strtotime($app['appointment_date'])); ?>
-                    </div>
-                </td>
-                <td data-label="Time">
-                    <div class="date-time">
-                        <i class="fas fa-clock time-icon"></i>
-                        <?php echo $app['start_time'] . " - " . $app['end_time']; ?>
-                    </div>
-                </td>
-                <td data-label="Status">
-                    <?php
-                        if ($app['status'] === 'Pending') {
-                            echo "<span class='status-pending'>
-                                    <i class='fas fa-clock status-icon'></i> Waiting Approval
-                                  </span>";
-                         } elseif ($app['status'] === 'Approved') {
-                            echo "<span class='status-approved'>
-                                    <i class='fas fa-check-circle status-icon'></i> Approved
-                                  </span>";
-                                  
-                                } elseif ($app['status'] === 'Expired') {
-                                    echo "<span class='status-rejected'>
-                                           <i class='fas fa-times-circle status-icon'></i> Expired
-                                          </span>";
-                                          
-                                }
-                                  else {
-                            echo "<span class='status-rejected'>
-                                    <i class='fas fa-times-circle status-icon'></i> Rejected
-                                  </span>";
-                        }
-                    ?>
-                </td>
-                <td data-label="Requested On">
-                    <div class="created-date">
-                        <i class="fas fa-history created-icon"></i>
-                        <?php 
-                            $createdDate = $app['created_at'] ?? 'N/A';
-                            if ($createdDate !== 'N/A') {
-                                echo date('d M Y', strtotime($createdDate));
-                            } else {
-                                echo $createdDate;
-                            }
-                        ?>
-                    </div>
-                </td>
-                <td data-label="Action">
-    <?php if ($app['status'] === 'Approved'): ?>
-        <?php if ($app['payment_done'] > 0): ?>
-            <span class="payment-done">
-                <i class="fas fa-check-circle payment-icon"></i> Payment Done
-            </span>
-        <?php else: ?>
-            <div class="d-flex">
-                <a href="payment.php?appointment_id=<?php echo $app['id']; ?>" class="btn btn-payment">
-                    <i class="fas fa-credit-card payment-icon"></i> Pay Now
-                </a>
-                
-                <!-- Cancel Appointment Button - Only show if payment not done -->
-                <a href="cancel_appointment.php?id=<?php echo $app['id']; ?>" 
-                   class="btn btn-cancel" 
-                   onclick="return confirm('Are you sure you want to cancel this appointment?');">
-                    <i class="fas fa-times-circle me-1"></i> Cancel
-                </a>
-            </div>
-        <?php endif; ?>
-    <?php else: ?>
-        <span class="text-muted fst-italic">No action needed</span>
-    <?php endif; ?>
-</td>
-                <td data-label="Condition">
-                    <div class="patient-condition">
-                        <?php echo htmlspecialchars($app['patient_condition'] ?? 'Not specified'); ?>
-                    </div>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-    <?php else: ?>
-        <tr>
-            <td colspan="8">
-                <div class="no-appointments">
-                    <i class="fas fa-calendar-times"></i>
-                    <h5>No Appointments Found</h5>
-                    <p>You haven't scheduled any appointments yet.</p>
+    </div>
+    
+    <div class="container">
+        <div class="appointments-container">
+            <?php if ($result->num_rows > 0) : ?>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Doctor</th>
+                                <th>Schedule</th>
+                                <th>Status</th>
+                                <th>Condition</th>
+                                <th>Payment</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php while ($row = $result->fetch_assoc()) : ?>
+                            <tr>
+                                <td>#<?php echo $row['id']; ?></td>
+                                <td class="doctor-name"><?php echo $row['doctor_name']; ?></td>
+                                <td>
+                                    <div class="date-time">
+                                        <span class="appointment-date">
+                                            <i class="far fa-calendar-alt me-1"></i>
+                                            <?php echo date('M d, Y', strtotime($row['appointment_date'])); ?>
+                                        </span>
+                                        <span class="time-slot">
+                                            <i class="far fa-clock me-1"></i>
+                                            <?php echo date('h:i A', strtotime($row['start_time'])) . ' - ' . 
+                                                        date('h:i A', strtotime($row['end_time'])); ?>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <?php if ($row['status'] == 'approved') : ?>
+                                        <span class="status-badge status-approved">
+                                            <i class="fas fa-check-circle"></i> Approved
+                                        </span>
+                                    <?php elseif ($row['status'] == 'pending') : ?>
+                                        <span class="status-badge status-pending">
+                                            <i class="fas fa-clock"></i> Pending
+                                        </span>
+                                    <?php elseif ($row['status'] == 'rejected') : ?>
+                                        <span class="status-badge status-rejected">
+                                            <i class="fas fa-times-circle"></i> Rejected
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <div class="long-text" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                         title="<?php echo htmlspecialchars($row['patient_condition']); ?>">
+                                        <?php echo htmlspecialchars($row['patient_condition']); ?>
+                                    </div>
+                                </td>
+                                <td>
+                                    <?php if ($row['status'] == 'approved') : ?>
+                                        <?php if (strtolower($row['payment_status']) === 'paid') : ?>
+                                            <button class="btn btn-success" disabled>
+                                                <i class="fas fa-check-circle me-1"></i> Paid
+                                            </button>
+                                        <?php else : ?>
+                                            <a href="payment.php?appointment_id=<?php echo $row['id']; ?>" class="btn btn-primary">
+                                                <i class="fas fa-credit-card me-1"></i> Pay Now
+                                            </a>
+                                        <?php endif; ?>
+                                    <?php elseif ($row['status'] == 'pending') : ?>
+                                        <button class="btn btn-warning" disabled>
+                                            <i class="fas fa-hourglass-half me-1"></i> Waiting
+                                        </button>
+                                    <?php elseif ($row['status'] == 'rejected') : ?>
+                                        <button class="btn btn-danger" disabled>
+                                            <i class="fas fa-ban me-1"></i> Rejected
+                                        </button>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (($row['status'] == 'pending' || $row['status'] == 'approved') && strtolower($row['payment_status']) !== 'paid') : ?>
+                                        <a href="cancel_appointment.php?id=<?php echo $row['id']; ?>" 
+                                           class="btn btn-danger" onclick="return confirm('Are you sure you want to cancel this appointment?');">
+                                            <i class="fas fa-times me-1"></i> Cancel
+                                        </a>
+                                    <?php else : ?>
+                                        <button class="btn btn-secondary" disabled>No Action</button>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endwhile; ?>
+                        </tbody>
+                    </table>
                 </div>
-            </td>
-        </tr>
-    <?php endif; ?>
-</tbody>
-                        
+            <?php else : ?>
+                <div class="empty-state">
+                    <i class="far fa-calendar-times"></i>
+                    <h3>No appointments found</h3>
+                    <p>You don't have any appointments scheduled yet.</p>
+                    <a href="book_appointment.php" class="btn btn-primary mt-3">
+                        <i class="fas fa-plus-circle me-1"></i> Book New Appointment
+                    </a>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+</body>
+</html>

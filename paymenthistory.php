@@ -40,10 +40,8 @@ $result = $stmt->get_result();
             margin: 40px auto;
             background-color: #fff;
             border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
             padding: 30px;
-            position: relative;
-            overflow: hidden;
+            
         }
         .payment-container::before {
             content: '';
@@ -52,14 +50,13 @@ $result = $stmt->get_result();
             left: 0;
             width: 100%;
             height: 8px;
-            background: linear-gradient(90deg, #38a169, #3182ce);
+            background: linear-gradient(to right, #3498db, #2ac8dd);
         }
         .page-title {
             color: #2d3748;
             font-weight: 700;
             margin-bottom: 25px;
             padding-bottom: 15px;
-            border-bottom: 1px solid #e2e8f0;
             position: relative;
         }
         .page-title i {
@@ -75,7 +72,7 @@ $result = $stmt->get_result();
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         .table thead th {
-            background: linear-gradient(90deg, #38a169, #3182ce);
+            background: linear-gradient(to right, #3498db, #2ac8dd);
             color: white;
             font-weight: 600;
             text-transform: uppercase;

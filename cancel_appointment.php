@@ -21,7 +21,7 @@ $patient_id = $_SESSION['id'];
 if ($appointment_id <= 0) {
     // Invalid appointment ID
     $_SESSION['error'] = "Invalid appointment ID.";
-    header('Location: my_appointments.php');
+    header('Location: appointmentstat.php');
     exit();
 }
 

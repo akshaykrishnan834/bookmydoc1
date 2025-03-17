@@ -54,6 +54,10 @@ if (!$slot) {
     die("Time slot not found.");
 }
 
+// Initialize message and status variables
+$message = null;
+$status = null;
+
 // Check if slot is already booked for this date
 $sql = "SELECT id FROM appointment_requests 
         WHERE doctor_id = ? AND slot_id = ? AND appointment_date = ? 
@@ -68,7 +72,7 @@ if ($result->num_rows > 0) {
     $status = "error";
 } else {
     // Process the appointment request
-    if (isset($_POST['confirm'])) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm'])) {
         $patient_condition = isset($_POST['patient_condition']) ? trim($_POST['patient_condition']) : '';
 
         // Insert into database
@@ -80,9 +84,15 @@ if ($result->num_rows > 0) {
         if ($stmt->execute()) {
             $message = "Your appointment request has been submitted successfully. You will be notified once it's approved.";
             $status = "success";
+            
+            // Add debug information
+            // echo "Appointment added. Insert ID: " . $stmt->insert_id;
         } else {
             $message = "There was an error processing your request: " . $conn->error;
             $status = "error";
+            
+            // Add debug information
+            // echo "Error: " . $stmt->error;
         }
     }
 }
@@ -364,47 +374,53 @@ $user = $result->fetch_assoc();
                 </div>
             </div>
 
-            <form method="POST" action="confirm_appointment.php?doctor_id=<?php echo $doctor_id; ?>&appointment_date=<?php echo $appointment_date; ?>&slot_id=<?php echo $slot_id; ?>">
-                <div class="detail-row">
-                    <div class="detail-icon">
-                        <i class="fas fa-notes-medical"></i>
-                    </div>
-                    <div class="detail-content w-100">
-                        <div class="detail-label">Patient Condition (Optional)</div>
-                        <textarea name="patient_condition" class="form-control" rows="3" placeholder="Describe your condition..."></textarea>
-                    </div>
-                </div>
+            <!-- Keep all the existing code above this section -->
 
-                <div class="important-notes">
-                    <div class="notes-title">
-                        <i class="fas fa-info-circle"></i> Important Notes
-                    </div>
-                    <ul class="notes-list">
-                        <li>Please arrive 15 minutes before your scheduled appointment time.</li>
-                        <li>Bring any relevant medical records or test results to your appointment.</li>
-                        <li>Your appointment request will be reviewed by the doctor and you will receive a confirmation.</li>
-                        <li>You can cancel your appointment up to 24 hours before the scheduled time.</li>
-                    </ul>
-                </div>
+<form method="POST" action="">
+    <?php if (!isset($message) || $status !== 'success'): ?>
+        <div class="detail-row">
+            <div class="detail-icon">
+                <i class="fas fa-notes-medical"></i>
+            </div>
+            <div class="detail-content w-100">
+                <div class="detail-label">Patient Condition (Optional)</div>
+                <textarea name="patient_condition" class="form-control" rows="3" placeholder="Describe your condition..."></textarea>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <div class="important-notes">
+        <div class="notes-title">
+            <i class="fas fa-info-circle"></i> Important Notes
+        </div>
+        <ul class="notes-list">
+            <li>Please arrive 15 minutes before your scheduled appointment time.</li>
+            <li>Bring any relevant medical records or test results to your appointment.</li>
+            <li>Your appointment request will be reviewed by the doctor and you will receive a confirmation.</li>
+            <li>You can cancel your appointment up to 24 hours before the scheduled time.</li>
+        </ul>
+    </div>
  
-                <?php if (!isset($message) || $status !== 'success'): ?>
-                    <div class="btn-container">
-                        <a href="book_appointment_page.php?doctor_id=<?php echo $doctor_id; ?>&appointment_date=<?php echo $appointment_date; ?>" class="btn btn-back">
-                            <i class="fas fa-arrow-left me-2"></i>Select Another Time
-                        </a>
-                        
-                        <button type="submit" name="confirm" class="btn btn-confirm">
-                            <i class="fas fa-check-circle me-2"></i>Confirm Appointment
-                        </button>
-                    </div>
-                <?php else: ?>
-                    <div class="btn-container">
-                        <a href="appointmentstat.php" class="btn btn-confirm">
-                            <i class="fas fa-home me-2"></i>Go to Dashboard
-                        </a>
-                    </div>
-                <?php endif; ?>
-            </form>
+    <?php if (!isset($message) || $status !== 'success'): ?>
+        <div class="btn-container">
+            <a href="book_appointment_page.php?doctor_id=<?php echo $doctor_id; ?>&appointment_date=<?php echo $appointment_date; ?>" class="btn btn-back">
+                <i class="fas fa-arrow-left me-2"></i>Select Another Time
+            </a>
+            
+            <button type="submit" name="confirm" class="btn btn-confirm">
+                <i class="fas fa-check-circle me-2"></i>Confirm Appointment
+            </button>
+        </div>
+    <?php else: ?>
+        <div class="btn-container">
+            <a href="appointmentstat.php" class="btn btn-confirm">
+                <i class="fas fa-home me-2"></i>Go to Dashboard
+            </a>
+        </div>
+    <?php endif; ?>
+</form>
+
+<!-- Keep all the existing code below this section -->
         </div>
     </div>
 </div>

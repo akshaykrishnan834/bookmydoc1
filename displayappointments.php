@@ -8,14 +8,15 @@ $doctor_id = $_SESSION['id']; // Assuming the doctor is already logged in
 
 // Function to get appointments by status with patient name and filter by doctor_id
 function getAppointmentsByStatus($conn, $status, $doctor_id) {
-    $sql = "SELECT a.*, p.name as patient_name, s.start_time as appointment_time, s.end_time as appointment_end
+    $sql = "SELECT a.*, p.name as patient_name, s.start_time as appointment_time, 
+                   s.end_time as appointment_end, a.rejection_reason
             FROM appointment_requests a
             LEFT JOIN patientreg p ON a.user_id = p.id
             LEFT JOIN doctor_availability s ON a.slot_id = s.id
-            WHERE a.status = ? AND s.doctor_id = ?"; // Filter by doctor_id
+            WHERE a.status = ? AND s.doctor_id = ?"; // Fetch rejection_reason too
             
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("si", $status, $doctor_id); // Use "si" to bind string and integer
+    $stmt->bind_param("si", $status, $doctor_id);
     $stmt->execute();
     $result = $stmt->get_result();
     
@@ -27,6 +28,7 @@ function getAppointmentsByStatus($conn, $status, $doctor_id) {
     $stmt->close();
     return $appointments;
 }
+
 
 // Get approved and rejected appointments for the logged-in doctor
 $approvedAppointments = getAppointmentsByStatus($conn, 'Approved', $doctor_id);
@@ -181,7 +183,13 @@ $conn->close();
                             <?php foreach($approvedAppointments as $appointment): ?>
                                 <tr>
                                     <td><?php echo htmlspecialchars($appointment['id']); ?></td>
-                                    <td><?php echo htmlspecialchars($appointment['patient_name'] ?? 'N/A'); ?></td>
+                                    <td>
+    <a href="patient_profiled2.php?id=<?php echo urlencode($appointment['user_id']); ?>" 
+       style="text-decoration: none; color: #007bff; font-weight: bold;">
+       <?php echo htmlspecialchars($appointment['patient_name'] ?? 'N/A'); ?>
+    </a>
+</td>
+
                                     <td><?php echo htmlspecialchars($appointment['appointment_date'] ?? 'N/A'); ?></td>
                                     <td><?php echo htmlspecialchars($appointment['appointment_time'] ?? 'N/A'); ?></td>
                                     <td><?php echo htmlspecialchars($appointment['appointment_end'] ?? 'N/A'); ?></td>
@@ -196,39 +204,49 @@ $conn->close();
         <br>
         <br>
         <!-- Rejected Appointments Section -->
-        <div class="appointment-section">
-            <h2>Rejected Appointments</h2>
-            <?php if(empty($rejectedAppointments)): ?>
-                <p>No rejected appointments found.</p>
-            <?php else: ?>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Patient Name</th>
-                                <th>Date</th>
-                                <th>Start Time</th>
-                                <th>End Time</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach($rejectedAppointments as $appointment): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($appointment['id']); ?></td>
-                                    <td><?php echo htmlspecialchars($appointment['patient_name'] ?? 'N/A'); ?></td>
-                                    <td><?php echo htmlspecialchars($appointment['appointment_date'] ?? 'N/A'); ?></td>
-                                    <td><?php echo htmlspecialchars($appointment['appointment_time'] ?? 'N/A'); ?></td>
-                                    <td><?php echo htmlspecialchars($appointment['appointment_end'] ?? 'N/A'); ?></td>
-                                    <td class="status-rejected"><?php echo htmlspecialchars($appointment['status']); ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
+        <!-- Rejected Appointments Section -->
+<div class="appointment-section">
+    <h2>Rejected Appointments</h2>
+    <?php if(empty($rejectedAppointments)): ?>
+        <p>No rejected appointments found.</p>
+    <?php else: ?>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Patient Name</th>
+                        <th>Date</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Rejection Reason</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach($rejectedAppointments as $appointment): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($appointment['id']); ?></td>
+                            <td>
+    <a href="patient_profiled2.php?id=<?php echo urlencode($appointment['user_id']); ?>" 
+       style="text-decoration: none; color: #007bff; font-weight: bold;">
+       <?php echo htmlspecialchars($appointment['patient_name'] ?? 'N/A'); ?>
+    </a>
+</td>
+
+                            <td><?php echo htmlspecialchars($appointment['appointment_date'] ?? 'N/A'); ?></td>
+                            <td><?php echo htmlspecialchars($appointment['appointment_time'] ?? 'N/A'); ?></td>
+                            <td><?php echo htmlspecialchars($appointment['appointment_end'] ?? 'N/A'); ?></td>
+                            <td><?php echo htmlspecialchars($appointment['rejection_reason'] ?? 'No reason provided'); ?></td>
+                            <td class="status-rejected"><?php echo htmlspecialchars($appointment['status']); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
+    <?php endif; ?>
+</div>
+
         
       
     </div>

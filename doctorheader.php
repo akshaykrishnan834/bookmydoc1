@@ -62,7 +62,12 @@ $profilePic = !empty($row['profile_photo']) ? $row['profile_photo'] : 'default-p
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="displayappointments.php">
-                            <i class="far fa-calendar-check me-1"></i> Patients
+                        <i class="fas fa-user-injured me-1"></i> Patients
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="doctorpaymentstat.php">
+                        <i class="fas fa-wallet me-1"></i> Earnings
                         </a>
                     </li>
                 </ul>

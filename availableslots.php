@@ -18,15 +18,15 @@ if ($conn->connect_error) {
 $success_message = '';
 $error_message = '';
 
+$doctor_id = $_SESSION['id'];  // Assuming the doctor's ID is stored in the session
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_slots'])) {
     $start_time = $_POST['start_time'];
     $end_time = $_POST['end_time'];
-    $doctor_id = $_SESSION['id'];  // Assuming the doctor's ID is stored in the session
 
     $start_timestamp = strtotime($start_time);
     $end_timestamp = strtotime($end_time);
 
-    // Ensure start time is before end time
     if ($start_timestamp > $end_timestamp) {
         [$start_timestamp, $end_timestamp] = [$end_timestamp, $start_timestamp];
         [$start_time, $end_time] = [$end_time, $start_time];
@@ -36,13 +36,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_slots'])) {
     $stmt = $conn->prepare("INSERT INTO doctor_availability (doctor_id, start_time, end_time) VALUES (?, ?, ?)");
     $stmt->bind_param("iss", $doctor_id, $slot_start, $slot_end);
 
-    // Generate 15-minute intervals and insert into DB
     $success_slots = [];
     $error_slots = [];
 
     while ($start_timestamp < $end_timestamp) {
         $slot_start = date('H:i', $start_timestamp);
-        $slot_end_timestamp = $start_timestamp + (15 * 60); // Add 15 minutes
+        $slot_end_timestamp = $start_timestamp + (15 * 60);
 
         if ($slot_end_timestamp > $end_timestamp) {
             break;
@@ -70,6 +69,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_slots'])) {
     $stmt->close();
 }
 
+// Fetch existing slots for the doctor
+$existing_slots = [];
+$sql = "SELECT start_time, end_time FROM doctor_availability WHERE doctor_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $doctor_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+while ($row = $result->fetch_assoc()) {
+    $existing_slots[] = $row['start_time'] . " - " . $row['end_time'];
+}
+
+$stmt->close();
 $conn->close();
 ?>
 
@@ -81,6 +93,23 @@ $conn->close();
     <title>Set Availability</title>
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <style>
+        /* Add your existing styles here */
+        .slots-list {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .slot-item {
+            padding: 0.5rem;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .slot-item:last-child {
+            border-bottom: none;
+        }
         :root {
             --primary-color: #2563eb;
             --secondary-color: #1e40af;
@@ -281,6 +310,20 @@ $conn->close();
     <div id="slot-preview" style="display: none;">
         <h3>Available Time Slots</h3>
         <div id="slots-container"></div>
+    </div>
+
+    <!-- Display existing slots -->
+    <div class="slots-list">
+        <h3>Current Available Slots</h3>
+        <?php if (count($existing_slots) > 0): ?>
+            <ul>
+                <?php foreach ($existing_slots as $slot): ?>
+                    <li class="slot-item"><i class="far fa-clock"></i> <?php echo $slot; ?></li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p>No slots available yet.</p>
+        <?php endif; ?>
     </div>
 </div>
 
