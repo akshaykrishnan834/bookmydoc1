@@ -276,7 +276,7 @@ $result = $stmt->get_result();
                     <a href="addmedicalrecords.php" class="upload-new">
                         <i class="fas fa-plus"></i> Upload New Record
                     </a>
-                    <a href="display_patients.php" class="upload-new">
+                    <a href="patientupdatebutton.php" class="upload-new">
                          Back to Profile
                     </a>
                     <div class="search-bar">
@@ -329,7 +329,7 @@ $result = $stmt->get_result();
                     <a href="addmedicalrecords.php" class="upload-btn">
                         <i class="fas fa-plus"></i> Upload Your First Record
                     </a>
-                    <a href="display_patients.php" class="upload-btn">
+                    <a href="patientupdatebutton.php" class="upload-btn">
                         Back to Profile
                     </a>
                 </div>

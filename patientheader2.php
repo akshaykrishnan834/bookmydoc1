@@ -22,7 +22,7 @@ $profilePic = !empty($row['profile_pic']) ? $row['profile_pic'] : 'default-profi
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="dashboard.php">
+            <a class="navbar-brand d-flex align-items-center" href="patientprofile.php">
                 <div class="logo-container me-3">
                     <img src="images/logo.png" alt="Logo" class="logo-image">
                 </div>
@@ -52,10 +52,11 @@ $profilePic = !empty($row['profile_pic']) ? $row['profile_pic'] : 'default-profi
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="paymenthistory.php">
-                            <i class="far fa-calendar-check me-1"></i>Payment Stat
-                        </a>
-                    </li>
+    <a class="nav-link" href="paymenthistory.php">
+        <i class="fas fa-wallet me-1"></i> Payment Stat
+    </a>
+</li>
+
                 </ul>
                 <div class="nav-right d-flex align-items-center">
                 <div class="nav-right d-flex align-items-center">

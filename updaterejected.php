@@ -10,6 +10,7 @@ $username = "root";
 $password = "";
 $dbname = "bookmydoc";
 
+// Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
@@ -18,7 +19,7 @@ if ($conn->connect_error) {
 $doctor_id = $_SESSION['id'];
 
 // Fetch existing details
-$stmt = $conn->prepare("SELECT age, qualifications, experience, specialization, degree_certificate, address FROM doctorreg WHERE id = ?");
+$stmt = $conn->prepare("SELECT age, qualifications, experience, specialization, degree_certificate, address, status FROM doctorreg WHERE id = ?");
 $stmt->bind_param("i", $doctor_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -26,7 +27,7 @@ $doctor = $result->fetch_assoc();
 $stmt->close();
 
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($doctor['qualifications']) && empty($doctor['specialization'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $age = $_POST['age'];
     $qualifications = $_POST['qualifications'];
     $experience = $_POST['experience'];
@@ -34,35 +35,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($doctor['qualifications']) &&
     $address = $_POST['address'];
 
     // Ensure the uploads directory exists
-$upload_dir = 'uploads/degrees/';
-if (!is_dir($upload_dir)) {
-    mkdir($upload_dir, 0777, true); // Create directory if not exists
-}
-
-// Handle file upload
-if (isset($_FILES['degree_certificate']) && $_FILES['degree_certificate']['error'] === UPLOAD_ERR_OK) {
-    $file_tmp = $_FILES['degree_certificate']['tmp_name'];
-    $file_name = basename($_FILES['degree_certificate']['name']);
-    $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
-
-    // Only allow PDF files
-    if ($file_ext === 'pdf') {
-        $new_file_path = $upload_dir . $doctor_id . "_degree.pdf"; // Store file as id_degree.pdf
-
-        if (move_uploaded_file($file_tmp, $new_file_path)) {
-            echo "<div class='alert alert-success'><i class='fas fa-check-circle'></i> Degree certificate uploaded successfully.</div>";
-        } else {
-            echo "<div class='alert alert-error'><i class='fas fa-exclamation-circle'></i> Failed to upload file.</div>";
-        }
-    } else {
-        echo "<div class='alert alert-error'><i class='fas fa-exclamation-circle'></i> Only PDF files are allowed.</div>";
+    $upload_dir = 'uploads/degrees/';
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0777, true); // Create directory if not exists
     }
-} else {
-    echo "<div class='alert alert-error'><i class='fas fa-exclamation-circle'></i> No file uploaded or an error occurred.</div>";
-}
 
-    // Update database
-    $update_stmt = $conn->prepare("UPDATE doctorreg SET age=?, qualifications=?, experience=?, specialization=?, degree_certificate=?, address=? WHERE id=?");
+    // Handle file upload
+    $new_file_path = $doctor['degree_certificate']; // Default value if no new file uploaded
+    if (isset($_FILES['degree_certificate']) && $_FILES['degree_certificate']['error'] === UPLOAD_ERR_OK) {
+        $file_tmp = $_FILES['degree_certificate']['tmp_name'];
+        $file_name = basename($_FILES['degree_certificate']['name']);
+        $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+
+        // Only allow PDF files
+        if ($file_ext === 'pdf') {
+            $new_file_path = $upload_dir . $doctor_id . "_degree.pdf"; // Store file as id_degree.pdf
+
+            if (move_uploaded_file($file_tmp, $new_file_path)) {
+                echo "<div class='alert alert-success'>Degree certificate uploaded successfully.</div>";
+            } else {
+                echo "<div class='alert alert-error'>Failed to upload file.</div>";
+            }
+        } else {
+            echo "<div class='alert alert-error'>Only PDF files are allowed.</div>";
+        }
+    }
+
+    // Update database with pending status
+    $update_stmt = $conn->prepare("UPDATE doctorreg SET age=?, qualifications=?, experience=?, specialization=?, degree_certificate=?, address=?, status='pending' WHERE id=?");
     $update_stmt->bind_param("isssssi", $age, $qualifications, $experience, $specialization, $new_file_path, $address, $doctor_id);
     $update_stmt->execute();
     $update_stmt->close();
@@ -80,7 +80,6 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Update Profile - BookMyDoc</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
             --primary-color: #2a6dd0;
@@ -321,7 +320,7 @@ $conn->close();
     </style>
 </head>
 <body>
-    <div class="container">
+<div class="container">
         <div class="header">
             <h2>Doctor Profile Update</h2>
             <p>Complete your professional profile to get started</p>

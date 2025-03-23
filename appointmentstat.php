@@ -10,7 +10,7 @@ if (!isset($_SESSION['id'])) {
 $patient_id = $_SESSION['id'];
 
 $sql = "SELECT ar.id, ar.appointment_date, ar.status, ar.payment_status, ar.patient_condition, 
-               d.name AS doctor_name, s.start_time, s.end_time
+               d.name AS doctor_name, s.start_time, s.end_time, ar.rejection_reason
         FROM appointment_requests ar
         JOIN doctorreg d ON ar.doctor_id = d.id
         JOIN doctor_availability s ON ar.slot_id = s.id
@@ -32,7 +32,6 @@ $result = $stmt->get_result();
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-       <style>
     body {
         background-color: #f8f9fa;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -48,19 +47,19 @@ $result = $stmt->get_result();
     }
     .table thead th {
         background: linear-gradient(to right, #3498db, #2ac8dd);
-    color: white;
-    font-weight: 600;
-    border: none;
-    padding: 15px;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
+        color: white;
+        font-weight: 600;
+        border: none;
+        padding: 15px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
 
-/* Add this if you want subtle borders between header cells */
-.table thead th:not(:last-child) {
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
-}
+    /* Add this if you want subtle borders between header cells */
+    .table thead th:not(:last-child) {
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
     
     .page-title {
         font-weight: 600;
@@ -233,6 +232,7 @@ $result = $stmt->get_result();
     .status-badge.status-rejected {
         color: #F44336;
         background-color: transparent;
+        cursor: pointer;
     }
     
     /* Date with icon */
@@ -265,7 +265,24 @@ $result = $stmt->get_result();
         text-align: center;
         padding: 30px 20px;
     }
-</style>
+
+    /* Rejection reason modal styling */
+    .rejection-reason-modal .modal-header {
+        background-color: #F44336;
+        color: white;
+
+    }
+
+    .rejection-reason-modal .modal-body {
+        padding: 20px;
+    }
+
+    .rejection-reason-modal .reason-content {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        border-left: 4px solid #F44336;
+    }
     </style>
 </head>
 <body>
@@ -311,18 +328,59 @@ $result = $stmt->get_result();
                                     </div>
                                 </td>
                                 <td>
-                                    <?php if ($row['status'] == 'approved') : ?>
-                                        <span class="status-badge status-approved">
-                                            <i class="fas fa-check-circle"></i> Approved
-                                        </span>
+                                <?php 
+    $appointment_date = strtotime($row['appointment_date']);
+    $yesterday = strtotime('-1 day');
+    
+    if ($appointment_date <= $yesterday) : ?>
+        <span class="status-badge status-rejected">
+            <i class="fas fa-exclamation-circle"></i> Expired
+        </span>
+    <?php elseif ($row['status'] == 'approved') : ?>
+        <span class="status-badge status-approved">
+            <i class="fas fa-check-circle"></i> Approved
+        </span>
                                     <?php elseif ($row['status'] == 'pending') : ?>
                                         <span class="status-badge status-pending">
                                             <i class="fas fa-clock"></i> Pending
                                         </span>
                                     <?php elseif ($row['status'] == 'rejected') : ?>
-                                        <span class="status-badge status-rejected">
-                                            <i class="fas fa-times-circle"></i> Rejected
+                                        <span class="status-badge status-rejected" 
+                                              data-bs-toggle="modal" 
+                                              data-bs-target="#rejectionModal<?php echo $row['id']; ?>" 
+                                              style="text-decoration: none; cursor: pointer;">
+                                            <i class="fas fa-times-circle"></i> Rejected (View Reason)
                                         </span>
+                                        
+                                        <!-- Rejection Reason Modal -->
+                                        <div class="modal fade rejection-reason-modal" id="rejectionModal<?php echo $row['id']; ?>" tabindex="-1" aria-labelledby="rejectionModalLabel" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="rejectionModalLabel">
+                                                            <i class="fas fa-exclamation-circle me-2"></i>
+                                                            Appointment Rejection
+                                                        </h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <h6>Appointment #<?php echo $row['id']; ?> with Dr. <?php echo $row['doctor_name']; ?></h6>
+                                                        <p><strong>Date:</strong> <?php echo date('M d, Y', strtotime($row['appointment_date'])); ?></p>
+                                                        <p><strong>Time:</strong> <?php echo date('h:i A', strtotime($row['start_time'])) . ' - ' . 
+                                                                date('h:i A', strtotime($row['end_time'])); ?></p>
+                                                        
+                                                        <div class="reason-content mt-3">
+                                                            <h6><strong>Reason for Rejection:</strong></h6>
+                                                            <p><?php echo !empty($row['rejection_reason']) ? htmlspecialchars($row['rejection_reason']) : 'No reason provided.'; ?></p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                        <a href="browsedoct.php" class="btn btn-primary">Book New Appointment</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -372,7 +430,7 @@ $result = $stmt->get_result();
                     <i class="far fa-calendar-times"></i>
                     <h3>No appointments found</h3>
                     <p>You don't have any appointments scheduled yet.</p>
-                    <a href="book_appointment.php" class="btn btn-primary mt-3">
+                    <a href="browsedoct.php" class="btn btn-primary mt-3">
                         <i class="fas fa-plus-circle me-1"></i> Book New Appointment
                     </a>
                 </div>

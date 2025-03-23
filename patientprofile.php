@@ -357,7 +357,7 @@ $tele_slots = [
                         </div>
                         <h5 class="card-title">Update Profile</h5>
                         <p class="card-text">Edit your personal information</p>
-                        <a href="display_patients.php" class="btn btn-primary">Edit Profile</a>
+                        <a href="patientupdatebutton.php" class="btn btn-primary">Edit Profile</a>
                     </div>
                 </div>
             </div>

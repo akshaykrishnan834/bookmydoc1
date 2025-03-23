@@ -12,7 +12,7 @@ include 'db_connection.php'; // Your DB connection file
 
 
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="dashboard.php">
+            <a class="navbar-brand d-flex align-items-center" href="admindashboard.php">
                 <div class="logo-container me-3">
                     <img src="images/logo.png" alt="Logo" class="logo-image">
                 </div>
@@ -32,10 +32,32 @@ include 'db_connection.php'; // Your DB connection file
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="managedoctors.php">
-                            <i class="fas fa-user-md me-1"></i> Approve Doctors
+                        <a class="nav-link" href="adminmanagedoct.php">
+                        <i class="fas fa-user-md"></i> Manage Doctors
                         </a>
                     </li>
+                    <li class="nav-item">
+                    <a href="adminmanagepatient.php" class="nav-link">
+                                <i class="fas fa-users"></i>
+                                Manage Patients
+                            </a>
+
+                    </li>
+                    <li class="nav-item">
+                    <a href="adminappointment.php" class="nav-link">
+                                <i class="fas fa-calendar-check"></i>
+                                View Appointments
+                            </a>
+
+                    </li>
+                    <li class="nav-item">
+                    <a href="adminrevenue.php" class="nav-link">
+                    <i class="fas fa-wallet me-1"></i>
+                                Max Revenue
+                            </a>
+
+                    </li>
+                    
                     
                 </ul>
                 <div class="nav-right d-flex align-items-center">

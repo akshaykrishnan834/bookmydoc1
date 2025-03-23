@@ -322,7 +322,9 @@ if (!$doctor) {
         
         // Check if there are existing appointments for these slots
         $bookedSlots = [];
-        $appointmentSql = "SELECT slot_id FROM appointment_requests WHERE doctor_id = ? AND appointment_date = ?";
+        $appointmentSql = "SELECT slot_id FROM appointment_requests 
+                   WHERE doctor_id = ? AND appointment_date = ? 
+                   AND (status = 'Pending' OR status = 'Approved')";
         $apptStmt = $conn->prepare($appointmentSql);
         $apptStmt->bind_param("is", $doctor_id, $appointment_date);
         $apptStmt->execute();

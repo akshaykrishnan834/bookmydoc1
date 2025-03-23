@@ -159,14 +159,39 @@ $result = mysqli_query($conn, $query);
        onclick="return confirm('Approve this doctor?')">
         Approve
     </a>
-    <a href="rejectdoctor.php?id=<?php echo $row['id']; ?>" 
-       class="action-btn reject-btn" 
-       onclick="return confirm('Reject this doctor?')">
+    <!-- Reject Button - Triggers Modal -->
+    <button type="button" class="action-btn reject-btn" data-bs-toggle="modal" data-bs-target="#rejectModal<?php echo $row['id']; ?>">
         Reject
-    </a>
+    </button>
+
+    <!-- Rejection Reason Modal -->
+    <div class="modal fade" id="rejectModal<?php echo $row['id']; ?>" tabindex="-1" aria-labelledby="rejectModalLabel<?php echo $row['id']; ?>" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rejectModalLabel<?php echo $row['id']; ?>">Provide Rejection Reason</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="rejectdoctor.php" method="POST">
+                    <div class="modal-body">
+                        <input type="hidden" name="doctor_id" value="<?php echo $row['id']; ?>">
+                        <div class="mb-3">
+                            <label for="rejection_reason" class="form-label">Rejection Reason:</label>
+                            <textarea class="form-control" name="rejection_reason" id="rejection_reason" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Confirm Rejection</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </td>
 
-                            </td>
+
+                            
                         </tr>
                     <?php } ?>
                 </tbody>

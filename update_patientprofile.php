@@ -664,7 +664,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </div>
 
                     <div class="buttons-container">
-                        <a href="display_patients.php" class="btn btn-secondary">
+                        <a href="patientupdatebutton.php" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Back to Profile
                         </a>
                         <button type="submit" class="btn btn-primary">

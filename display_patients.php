@@ -19,7 +19,8 @@ if ($conn->connect_error) {
 
 $patient_id = $_SESSION['id'];
 
-$stmt = $conn->prepare("SELECT name, email, phone, gender, dob FROM patientreg WHERE id = ?");
+// Fetch patient data including profile photo
+$stmt = $conn->prepare("SELECT name, email, phone, gender, dob, profile_pic FROM patientreg WHERE id = ?");
 $stmt->bind_param("i", $patient_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -35,6 +36,9 @@ if (!empty($patient['dob'])) {
 }
 
 $conn->close();
+
+// Get first letter of name for avatar fallback
+$firstLetter = !empty($patient['name']) ? strtoupper(substr($patient['name'], 0, 1)) : '?';
 ?>
 
 <!DOCTYPE html>
@@ -93,20 +97,28 @@ $conn->close();
         }
         
         .profile-avatar {
-            width: 120px;
-            height: 120px;
+            width: 150px;
+            height: 150px;
             border-radius: 50%;
+            margin: 0 auto 20px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            position: relative;
             background-color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 20px;
-            border: 5px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         
         .avatar-text {
-            font-size: 3rem;
+            font-size: 3.5rem;
             color: var(--primary-color);
             font-weight: bold;
         }
@@ -217,6 +229,29 @@ $conn->close();
             background: linear-gradient(to right, #9C27B0, #E040FB);
         }
         
+        .photo-badge {
+            position: absolute;
+            bottom: 0px;
+            right: 0px;
+            background: var(--primary-color);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            border: 3px solid white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .photo-badge:hover {
+            background: var(--secondary-color);
+            transform: scale(1.1);
+        }
+        
         @media (max-width: 768px) {
             .profile-btn {
                 padding: 12px 20px;
@@ -227,6 +262,11 @@ $conn->close();
             .action-button {
                 padding: 0 15px;
             }
+            
+            .profile-avatar {
+                width: 120px;
+                height: 120px;
+            }
         }
         
     </style>
@@ -236,11 +276,18 @@ $conn->close();
         <?php if ($patient): ?>
             <div class="profile-card">
                 <div class="profile-header">
+                    <div class="profile-avatar">
+                        <?php if (!empty($patient['profile_pic'])): ?>
+                            <img src="<?php echo htmlspecialchars( $patient['profile_pic']); ?>" alt="Profile Photo">
+                        <?php else: ?>
+                            <div class="avatar-text"><?php echo $firstLetter; ?></div>
+                        <?php endif; ?>
+                        
+                    </div>
                     <h1 class="profile-name"><?php echo htmlspecialchars($patient['name']); ?></h1>
                     <p class="profile-role">Patient</p>
                 </div>
                 <div class="profile-content">
-                    <!-- Previous info items remain the same -->
                     <div class="info-item">
                         <div class="info-label"><i class="fas fa-phone"></i> Phone Number</div>
                         <div class="info-value"><?php echo htmlspecialchars($patient['phone']); ?></div>
@@ -262,20 +309,8 @@ $conn->close();
                         <div class="info-value"><?php echo !empty($patient['gender']) ? htmlspecialchars($patient['gender']) : 'Not provided'; ?></div>
                     </div>
                     <div class="action-button">
-                        <a href="update_patientprofile.php" class="profile-btn">
+                        <a href="patientupdatebutton.php?id=<?php echo $patient_id; ?>" class="profile-btn">
                             <i class="fas fa-user-edit"></i> Update Profile
-                        </a>
-                        <a href="patientprofileresetpass.php" class="profile-btn reset-password-btn">
-                            <i class="fas fa-key"></i> Reset Password
-                        </a>
-                        <a href="patientcontactinfo.php" class="profile-btn reset-contact-btn">
-                            <i class="fas fa-address-card"></i> Reset Contact Info
-                        </a>
-                        <a href="patientprofilepic.php" class="profile-btn change-photo-btn">
-                            <i class="fas fa-camera"></i> Change Photo
-                        </a>
-                        <a href="medical_record.php" class="profile-btn reset-contact-btn">
-                            <i class="fas fa-address-card"></i> Medical Records
                         </a>
                     </div>
                 </div>

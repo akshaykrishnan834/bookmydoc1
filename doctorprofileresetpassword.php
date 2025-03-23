@@ -335,7 +335,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body>
     <div class="container">
 
-    <a href="doctorac.php" class="back-button">
+    <a href="updatedoctor.php" class="back-button">
             <i class="fas fa-chevron-left"></i>
             Back to Profile
         </a>

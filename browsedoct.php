@@ -1,52 +1,53 @@
 <?php 
-include('db_connection.php'); // Include database connection
-include('patientheader.php');   
+session_start();
+include('db_connection.php'); 
+include('patientheader2.php');   
 
-// Get all unique specializations for the filter dropdown
+// Get logged-in patient ID
+$patient_id = $_SESSION['id'] ?? null;
+
+// Check if the patient is disabled
+$patient_disabled = false;
+if ($patient_id) {
+    $patient_query = "SELECT action FROM patientreg WHERE id = $patient_id";
+    $patient_result = mysqli_query($conn, $patient_query);
+    $patient_data = mysqli_fetch_assoc($patient_result);
+    $patient_disabled = ($patient_data['action'] === 'disabled');
+}
+
+// Get specializations for filter dropdown
 $specializations_query = "SELECT DISTINCT specialization FROM doctorreg WHERE status = 'approved'";
 $specializations_result = mysqli_query($conn, $specializations_query);
 
-// Get all unique locations from the location field for the filter dropdown
+// Get locations for filter dropdown
 $locations_query = "SELECT DISTINCT location FROM doctorreg WHERE status = 'approved'";
 $locations_result = mysqli_query($conn, $locations_query);
 
 // Initialize filters
-$specialization_filter = "";
-$location_filter = "";
-$search_term = "";
+$specialization_filter = $location_filter = $search_term = "";
 
-// Handle form submission
 if(isset($_GET['filter']) || isset($_GET['search'])) {
-    // Get filter values
     if(isset($_GET['specialization']) && $_GET['specialization'] != "") {
         $specialization_filter = mysqli_real_escape_string($conn, $_GET['specialization']);
     }
-    
     if(isset($_GET['location']) && $_GET['location'] != "") {
         $location_filter = mysqli_real_escape_string($conn, $_GET['location']);
     }
-    
     if(isset($_GET['search_term']) && $_GET['search_term'] != "") {
         $search_term = mysqli_real_escape_string($conn, $_GET['search_term']);
     }
 }
 
 // Build the query with filters
-$query = "SELECT * FROM doctorreg WHERE status = 'approved'";
-
-if($specialization_filter != "") {
-    $query .= " AND specialization = '$specialization_filter'";
+// Build the query with filters
+$query = "SELECT * FROM doctorreg WHERE status = 'approved' AND action != 'disabled'";
+if($specialization_filter != "") { $query .= " AND specialization = '$specialization_filter'"; }
+if($location_filter != "") { $query .= " AND location = '$location_filter'"; }
+if($search_term != "") { 
+    $query .= " AND (name LIKE '%$search_term%' OR specialization LIKE '%$search_term%' OR location LIKE '%$search_term%')";
 }
 
-if($location_filter != "") {
-    $query .= " AND location = '$location_filter'"; // Changed from address to location
-}
 
-if($search_term != "") {
-    $query .= " AND (name LIKE '%$search_term%' OR specialization LIKE '%$search_term%' OR location LIKE '%$search_term%')"; // Changed from address to location
-}
-
-// Execute the query
 $result = mysqli_query($conn, $query);
 ?>
 
@@ -71,26 +72,7 @@ $result = mysqli_query($conn, $query);
         }
         .doctor-box:hover { transform: translateY(-3px); }
         .btn-primary { background-color: #0077b6; border: none; }
-        .doctor-contact {
-            background-color: #f8f9fa;
-            padding: 8px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .filter-section {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-        }
-        .no-results {
-            text-align: center;
-            padding: 40px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
+        .doctor-contact { background-color: #f8f9fa; padding: 8px; border-radius: 5px; margin: 10px 0; }
         .location-badge {
             display: inline-block;
             background-color: #e3f2fd;
@@ -102,105 +84,98 @@ $result = mysqli_query($conn, $query);
             margin-bottom: 10px;
             border: 1px solid #b3e0ff;
         }
+        .rating-stars { color: #ffcc00; }
     </style>
 </head>
 <body>
 
 <div class="container12">
     <h2 class="text-center mb-4">Approved Doctors</h2>
-    
-    <!-- Search and Filter Section -->
-    <div class="filter-section">
-        <form method="GET" action="" class="row g-3">
-            <!-- Search bar -->
-            <div class="col-md-4">
-                <label for="search_term" class="form-label">Search</label>
-                <input type="text" class="form-control" id="search_term" name="search_term" 
-                       placeholder="Search by name, specialization..." value="<?php echo htmlspecialchars($search_term); ?>">
-            </div>
-            
-            <!-- Specialization filter -->
-            <div class="col-md-3">
-                <label for="specialization" class="form-label">Department</label>
-                <select class="form-select" id="specialization" name="specialization">
-                    <option value="">All Departments</option>
-                    <?php while($spec_row = mysqli_fetch_assoc($specializations_result)) { ?>
-                        <option value="<?php echo htmlspecialchars($spec_row['specialization']); ?>" 
-                                <?php if($specialization_filter == $spec_row['specialization']) echo "selected"; ?>>
-                            <?php echo htmlspecialchars($spec_row['specialization']); ?>
-                        </option>
-                    <?php } ?>
-                </select>
-            </div>
-            
-            <!-- Location filter -->
-            <div class="col-md-3">
-                <label for="location" class="form-label">Location</label>
-                <select class="form-select" id="location" name="location">
-                    <option value="">All Locations</option>
-                    <?php while($loc_row = mysqli_fetch_assoc($locations_result)) { ?>
-                        <option value="<?php echo htmlspecialchars($loc_row['location']); ?>"
-                                <?php if($location_filter == $loc_row['location']) echo "selected"; ?>>
-                            <?php echo htmlspecialchars($loc_row['location']); ?>
-                        </option>
-                    <?php } ?>
-                </select>
-            </div>
-            
-            <!-- Filter buttons -->
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" name="filter" class="btn btn-primary me-2">Search</button>
-                <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" class="btn btn-secondary">Reset</a>
-            </div>
-        </form>
-    </div>
-    
-    <!-- Display filtered results -->
+
     <div class="row">
         <?php 
         if(mysqli_num_rows($result) > 0) {
             while ($row = mysqli_fetch_assoc($result)) { 
+                // Fetch average rating for doctor
+                $doctor_id = $row['id'];
+                $rating_query = "SELECT AVG(rating) AS avg_rating FROM feedback WHERE doctor_id = $doctor_id";
+                $rating_result = mysqli_query($conn, $rating_query);
+                $rating_row = mysqli_fetch_assoc($rating_result);
+                $avg_rating = round($rating_row['avg_rating'], 1);
+
+                // Fetch existing feedback
+                $feedback_query = "SELECT f.rating, f.feedback_text, p.name AS patient_name 
+                                   FROM feedback f 
+                                   JOIN patientreg p ON f.patient_id = p.id 
+                                   WHERE f.doctor_id = $doctor_id ORDER BY f.created_at DESC";
+                $feedback_result = mysqli_query($conn, $feedback_query);
+
+                // Disable slot booking if the doctor is disabled or the patient is disabled
+                $is_disabled = ($row['status'] == 'disabled' || $patient_disabled);
+                $disable_class = $is_disabled ? 'disabled' : '';
         ?>
             <div class="col-md-4 mb-3">
                 <div class="doctor-box">
                     <h5><?php echo htmlspecialchars($row['name']); ?></h5>
                     <p><strong>Specialization:</strong> <?php echo htmlspecialchars($row['specialization']); ?></p>
-                    
-                    <!-- Display location separately with a badge style -->
+
                     <div class="location-badge">
                         <i class="fas fa-map-marker-alt me-1"></i> <?php echo htmlspecialchars($row['location']); ?>
                     </div>
-                    
+
+                    <p class="rating-stars">⭐ <?php echo $avg_rating ? $avg_rating . "/5" : "No ratings yet"; ?></p>
+
                     <div class="doctor-contact">
                         <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
                         <p><strong>Phone:</strong> <?php echo htmlspecialchars($row['phone']); ?></p>
                         <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
                     </div>
-                    
+
                     <p>
-                        <a href="appointmentdate.php?doctor_id=<?php echo $row['id']; ?>" class="btn btn-primary">
+                        <a href="appointmentdate.php?doctor_id=<?php echo $row['id']; ?>" 
+                           class="btn btn-primary <?php echo $disable_class; ?>">
                             View Available Slots
                         </a>
+                        <button class="btn btn-warning" data-bs-toggle="modal" 
+                                data-bs-target="#feedbackModal<?php echo $row['id']; ?>">
+                            View Feedback
+                        </button>
                     </p>
                 </div>
             </div>
-        <?php 
-            }
-        } else {
-            // No results found
-            echo '<div class="col-12"><div class="no-results">
-                    <h4>No doctors found</h4>
-                    <p>Try changing your search criteria or reset filters</p>
-                  </div></div>';
-        }
-        ?>
+
+            <!-- Feedback Modal -->
+            <div class="modal fade" id="feedbackModal<?php echo $row['id']; ?>" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Feedback for <?php echo htmlspecialchars($row['name']); ?></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h6>Previous Feedback:</h6>
+                            <div style="max-height: 200px; overflow-y: auto;">
+                                <?php 
+                                if(mysqli_num_rows($feedback_result) > 0) {
+                                    while ($feedback = mysqli_fetch_assoc($feedback_result)) {
+                                        echo "<p><strong>{$feedback['patient_name']}:</strong> ⭐ {$feedback['rating']}/5 <br> {$feedback['feedback_text']}</p><hr>";
+                                    }
+                                } else {
+                                    echo "<p>No feedback yet.</p>";
+                                }
+                                ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        <?php } } ?>
     </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-<!-- Font Awesome for the location icon -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
 </body>
 </html>
 
-<?php mysqli_close($conn); ?>
+<?php mysqli_close($conn); ?> 

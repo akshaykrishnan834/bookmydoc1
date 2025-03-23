@@ -2,29 +2,29 @@
 session_start();
 include('db_connection.php');
 
-if (isset($_GET['id'])) {
-    $doctor_id = intval($_GET['id']);
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    if (isset($_POST['doctor_id']) && isset($_POST['rejection_reason'])) {
+        $doctor_id = intval($_POST['doctor_id']);
+        $rejection_reason = trim($_POST['rejection_reason']);
 
-    // Update status to "Rejected" in the database
-    $query = "UPDATE doctorreg SET status = 'Rejected' WHERE id = ?";
-    $stmt = mysqli_prepare($conn, $query);
+        // Update doctor status and add rejection reason
+        $sql = "UPDATE doctorreg SET status = 'Rejected', rejection_reason = ? WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("si", $rejection_reason, $doctor_id);
 
-    if ($stmt) {
-        mysqli_stmt_bind_param($stmt, "i", $doctor_id);
-        if (mysqli_stmt_execute($stmt)) {
-            $_SESSION['message'] = "Doctor has been rejected successfully.";
+        if ($stmt->execute()) {
+            echo "<script>alert('Doctor has been rejected successfully.'); window.location.href = 'managedoctors.php';</script>";
         } else {
-            $_SESSION['error'] = "Failed to reject the doctor. Please try again.";
+            echo "<script>alert('Error rejecting doctor. Please try again.'); window.location.href = 'managedoctors.php';</script>";
         }
-        mysqli_stmt_close($stmt);
-    } else {
-        $_SESSION['error'] = "Database error. Please try again.";
-    }
 
-    mysqli_close($conn);
+        $stmt->close();
+    } else {
+        echo "<script>alert('Invalid request.'); window.location.href = 'adminmanagedoct.php';</script>";
+    }
+} else {
+    echo "<script>alert('Invalid request method.'); window.location.href = 'adminmanagedoct.php';</script>";
 }
 
-// Redirect back to the pending approvals page
-header("Location: managedoctors.php");
-exit();
+$conn->close();
 ?>

@@ -93,6 +93,12 @@ $conn->close();
     <title>Set Availability</title>
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            
+            
+           
+        }
         /* Add your existing styles here */
         .slots-list {
             margin-top: 2rem;

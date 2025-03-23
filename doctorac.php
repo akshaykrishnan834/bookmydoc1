@@ -18,11 +18,21 @@ if ($conn->connect_error) {
 
 $doctor_id = $_SESSION['id'];
 
-$stmt = $conn->prepare("SELECT name, email, age, qualifications, experience, specialization, degree_certificate, profile_photo FROM doctorreg WHERE id = ?");
+// Updated query to include status and rejection_reason fields
+$stmt = $conn->prepare("SELECT name, email, age, qualifications, experience, specialization, degree_certificate, profile_photo, status, rejection_reason FROM doctorreg WHERE id = ?");
 $stmt->bind_param("i", $doctor_id);
 $stmt->execute();
 $result = $stmt->get_result();
 $doctor = $result->fetch_assoc();
+
+$stmt = $conn->prepare("SELECT AVG(rating) AS avg_rating, COUNT(*) AS total_feedbacks FROM feedback WHERE doctor_id = ?");
+$stmt->bind_param("i", $doctor_id);
+$stmt->execute();
+$rating_result = $stmt->get_result()->fetch_assoc();
+
+$avg_rating = round($rating_result['avg_rating'], 1); // Round to 1 decimal place
+$total_feedbacks = $rating_result['total_feedbacks'];
+
 $stmt->close();
 $conn->close();
 ?>
@@ -35,8 +45,6 @@ $conn->close();
     <title>Dr. <?= htmlspecialchars($doctor['name']) ?> - Profile</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-          
-        
         :root {
             --primary-color: #0077b6;
             --secondary-color: #00b4d8;
@@ -267,9 +275,102 @@ $conn->close();
             transform: translateY(-2px);
         }
 
+        /* Status badge styles */
+        .status-badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+        }
+
+        .status-active {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        .status-pending {
+            background-color: #f39c12;
+            color: white;
+        }
+
+        .status-inactive, .status-rejected {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        /* Rejection reason modal styles */
+        .rejection-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            animation: slideIn 0.4s;
+        }
+
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-modal:hover,
+        .close-modal:focus {
+            color: black;
+            text-decoration: none;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #e6e6e6;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            color: #e74c3c;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0}
+            to {opacity: 1}
+        }
+
+        @keyframes slideIn {
+            from {transform: translateY(-50px); opacity: 0;}
+            to {transform: translateY(0); opacity: 1;}
+        }
+
         @media (max-width: 768px) {
             .action-buttons {
                 grid-template-columns: 1fr;
+            }
+            .modal-content {
+                width: 95%;
+                margin: 20% auto;
             }
         }
     </style>
@@ -281,33 +382,52 @@ $conn->close();
                 <div class="profile-photo-container">
                 <img src="<?= htmlspecialchars($doctor['profile_photo']) ?>" onerror="this.onerror=null; this.src='images/profilepicdoct.jpg';" class="profile-photo">
 
-                <div class="verification-badge"><i class="fas fa-check"></i>
+                <div class="verification-badge">
                     </div>
                 </div>
                 <h1 class="doctor-name">Dr. <?= htmlspecialchars($doctor['name']) ?></h1>
                 <p class="doctor-specialization"><?= htmlspecialchars($doctor['specialization']) ?></p>
+                
+                <!-- Display status badge -->
+                <?php 
+                $statusClass = '';
+                $statusText = isset($doctor['status']) ? htmlspecialchars($doctor['status']) : 'Unknown';
+                
+                if (strtolower($statusText) == 'active') {
+                    $statusClass = 'status-active';
+                } elseif (strtolower($statusText) == 'pending') {
+                    $statusClass = 'status-pending';
+                } elseif (strtolower($statusText) == 'rejected') {
+                    $statusClass = 'status-rejected';
+                } else {
+                    $statusClass = 'status-inactive';
+                }
+
+                // Check if rejection reason exists
+                $hasRejectionReason = strtolower($statusText) == 'rejected' && !empty($doctor['rejection_reason']);
+                ?>
+                
+                <?php if ($hasRejectionReason): ?>
+                <div id="statusBadge" class="status-badge <?= $statusClass ?>" onclick="showRejectionModal()">
+                    <?= ucfirst($statusText) ?> <i class="fas fa-info-circle"></i>
+                </div>
+                <?php else: ?>
+                <div class="status-badge <?= $statusClass ?>">
+                    <?= ucfirst($statusText) ?>
+                </div>
+                <?php endif; ?>
                 
                 <div class="quick-info">
                     <div class="info-item">
                         <div class="info-value"><?= htmlspecialchars($doctor['experience']) ?>+</div>
                         <div class="info-label">Years Exp.</div>
                     </div>
-                    <div class="info-item">
-                        <div class="info-value">500+</div>
-                        <div class="info-label">Patients</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-value">4.9</div>
-                        <div class="info-label">Rating</div>
-                    </div>
+                    <p class="rating-value">⭐ <br><?= $avg_rating ? $avg_rating . "/5" : "No ratings yet" ?></p>
+                    <p class="feedback-count"><?= $total_feedbacks ?> <br>reviews</p>
                 </div>
-
-                
-<br>
-<br>
 <a href="adddoctors.php" class="btn">
                     <i class="fas fa-edit"></i>
-                    Update Profile
+                    View Profile
                 </a>
             </div>
 
@@ -369,20 +489,13 @@ $conn->close();
                 </div>
 
                 <?php if (!empty($doctor['degree_certificate'])): ?>
-                
-                    
-                    <div class="action-buttons">
-                        <a href="doctorprofileresetpassword.php" class="action-btn btn-password">
-                            <i class="fas fa-key"></i>
-                            Reset Password
+                <br>
+                <br>
+                    <a href="updatedoctor.php?id=<?php echo $doctor_id; ?>" class="action-btn btn-photo">
+                            <i class="fas fa-user-edit"></i> Update Profile
                         </a>
-                        <a href="doctorprofilecontact.php" class="action-btn btn-contact">
-                            <i class="fas fa-address-card"></i>
-                            Update Contact Info
-                        </a>
-                        <a href="doctorchangeprofile.php" class="action-btn btn-photo">
-                            <i class="fas fa-camera"></i>
-                            Change Photo
+                        <a href="doctor_feedback.php?id=<?php echo $doctor_id; ?>" class="action-btn btn-photo">
+                        <i class="fas fa-comment-dots"></i>  Feedbacks
                         </a>
                     </div>
                 </div>
@@ -391,5 +504,44 @@ $conn->close();
             </div>
         </div>
     </div>
+    
+    <!-- Rejection Reason Modal -->
+    <?php if ($hasRejectionReason): ?>
+    <div id="rejectionModal" class="rejection-modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeRejectionModal()">&times;</span>
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Application Rejected</h3>
+            </div>
+            <div class="modal-body">
+                <strong>Reason for rejection:</strong>
+                <p><?= htmlspecialchars($doctor['rejection_reason']) ?></p>
+                <p style="margin-top: 15px;">Please review the issues mentioned above and update your profile accordingly. You can reapply after making the necessary changes.</p>
+                <form method="POST" action="updaterejected.php" >
+                <button class="action-btn btn-contact">Update Profile</button>
+            </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Modal functions
+        function showRejectionModal() {
+            document.getElementById("rejectionModal").style.display = "block";
+        }
+        
+        function closeRejectionModal() {
+            document.getElementById("rejectionModal").style.display = "none";
+        }
+        
+        // Close modal if user clicks outside of it
+        window.onclick = function(event) {
+            var modal = document.getElementById("rejectionModal");
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+    <?php endif; ?>
 </body>
 </html>

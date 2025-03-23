@@ -227,7 +227,7 @@ $conn->close();
                 </button>
             </form>
             
-            <a href="display_patients.php" class="back-btn">
+            <a href="patientupdatebutton.php" class="back-btn">
                 <i class="fas fa-arrow-left"></i> Back to Profile
             </a>
         </div>

@@ -27,14 +27,97 @@ $result = $stmt->get_result();
     <title>Appointment Requests</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        body {
+            background-color: #f4f6f9;
+             font-family: 'Poppins', sans-serif;
+        }
+
+        .container2 {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        table th, table td {
+            text-align: center;
+        }
+
+        .btn {
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 5px;
+        }
+
+        .btn-approve {
+            background-color: #28a745;
+            color: white;
+            border: none;
+        }
+
+        .btn-approve:hover {
+            background-color: #218838;
+        }
+
+        .btn-reject {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+        }
+
+        .btn-reject:hover {
+            background-color: #c82333;
+        }
+
+        .modal-header {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .modal-body {
+            background-color: #f8f9fa;
+        }
+
+        .modal-footer {
+            background-color: #f8f9fa;
+        }
+
+        .modal-footer .btn {
+            border-radius: 5px;
+        }
+
+        .table {
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+
+        .table th {
+            background: linear-gradient(to right, #4e73df, #224abe);
+            color: white;
+        }
+
+        .table td {
+            background-color: #f1f1f1;
+        }
+    </style>
 </head>
 <body>
 
-<div class="container mt-5">
-    <h2 class="text-center">Pending Appointment Requests</h2>
+<div class="container2 mt-5">
+    <h2>Pending Appointment Requests</h2>
 
     <?php if ($result->num_rows > 0) { ?>
-        <table class="table table-bordered mt-4">
+        <table class="table table-bordered">
             <thead>
                 <tr>
                     <th>Patient Name</th>
@@ -50,12 +133,19 @@ $result = $stmt->get_result();
                         <td><?php echo $row['appointment_date']; ?></td>
                         <td><?php echo $row['start_time'] . " - " . $row['end_time']; ?></td>
                         <td>
+                            <!-- Approve Button -->
                             <form method="POST" action="approve_reject_appointment.php" style="display:inline;">
                                 <input type="hidden" name="appointment_id" value="<?php echo $row['id']; ?>">
-                                <button type="submit" name="action" value="approve" class="btn btn-success">Approve</button>
+                                <button type="submit" name="action" value="approve" class="btn btn-approve">
+                                    <i class="bi bi-check-circle"></i> Approve
+                                </button>
                             </form>
-                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal<?php echo $row['id']; ?>">Reject</button>
-                            
+
+                            <!-- Reject Button -->
+                            <button type="button" class="btn btn-reject" data-bs-toggle="modal" data-bs-target="#rejectModal<?php echo $row['id']; ?>">
+                                <i class="bi bi-x-circle"></i> Reject
+                            </button>
+
                             <!-- Rejection Modal -->
                             <div class="modal fade" id="rejectModal<?php echo $row['id']; ?>" tabindex="-1" aria-labelledby="rejectModalLabel<?php echo $row['id']; ?>" aria-hidden="true">
                                 <div class="modal-dialog">
@@ -74,7 +164,7 @@ $result = $stmt->get_result();
                                             </div>
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                <button type="submit" name="action" value="reject" class="btn btn-danger">Confirm Rejection</button>
+                                                <button type="submit" name="action" value="reject" class="btn btn-reject">Confirm Rejection</button>
                                             </div>
                                         </form>
                                     </div>

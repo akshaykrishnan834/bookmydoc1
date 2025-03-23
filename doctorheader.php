@@ -31,7 +31,7 @@ $profilePic = !empty($row['profile_photo']) ? $row['profile_photo'] : 'default-p
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="dashboard.php">
+            <a class="navbar-brand d-flex align-items-center" href="doctorprofile.php">
                 <div class="logo-container me-3">
                     <img src="images/logo.png" alt="Logo" class="logo-image">
                 </div>

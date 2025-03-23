@@ -3,7 +3,7 @@ include('db_connection.php');
 include('adminheader.php');
 
 // Handle patient deletion
-if(isset($_GET['delete'])) {
+if (isset($_GET['delete'])) {
     $id = mysqli_real_escape_string($conn, $_GET['delete']);
     $delete_query = "DELETE FROM patientreg WHERE id = '$id'";
     mysqli_query($conn, $delete_query);
@@ -26,9 +26,19 @@ $total_records = mysqli_fetch_assoc($count_result)['total'];
 $total_pages = ceil($total_records / $records_per_page);
 
 // Fetch patients
-$query = "SELECT * FROM patientreg $where_clause
-          LIMIT $offset, $records_per_page";
+$query = "SELECT * FROM patientreg $where_clause LIMIT $offset, $records_per_page";
 $result = mysqli_query($conn, $query);
+
+// Handle delete doctor action
+if (isset($_GET['delete'])) {
+    $doctor_id = mysqli_real_escape_string($conn, $_GET['delete']);
+    $delete_query = "DELETE FROM patientreg WHERE id = '$doctor_id'";
+    
+    if (mysqli_query($conn, $delete_query)) {
+        echo "<script>alert('patient deleted successfully!'); window.location.href='adminmanagepatient.php';</script>";
+    } else {
+        echo "<script>alert('Error deleting doctor.');</script>";
+    }}
 ?>
 
 <!DOCTYPE html>
@@ -42,38 +52,25 @@ $result = mysqli_query($conn, $query);
 </head>
 <body class="bg-light">
     <div class="container-fluid py-4">
-        <!-- Header Section -->
         <div class="row mb-4">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h2 class="page-title">Manage Patients</h2>
-                        <p class="text-muted">View and manage registered patients</p>
-                    </div>
-                    
-                    <!-- Added Search Form -->
-                    <div class="search-form d-flex">
-                        <form action="" method="GET" class="d-flex">
-                            <input type="text" name="search" class="form-control" placeholder="Search patients..." 
-                                   value="<?php echo htmlspecialchars($search); ?>">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </form>
-                    </div>
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="page-title">Manage Patients</h2>
+                    <p class="text-muted">View and manage registered patients</p>
                 </div>
+                
+               
             </div>
         </div>
 
         <!-- Alert Messages -->
-        <?php if(isset($_GET['msg']) && $_GET['msg'] == 'deleted'): ?>
+        <?php if (isset($_GET['msg']) && $_GET['msg'] == 'deleted'): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             Patient record has been successfully deleted.
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         <?php endif; ?>
 
-        <!-- Patients Table -->
         <div class="card">
             <div class="card-body">
                 <div class="table-responsive">
@@ -84,11 +81,12 @@ $result = mysqli_query($conn, $query);
                                 <th>Patient Name</th>
                                 <th>Contact Information</th>
                                 <th>Age/Gender</th>
+                                <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php while($patient = mysqli_fetch_assoc($result)): ?>
+                            <?php while ($patient = mysqli_fetch_assoc($result)): ?>
                             <tr>
                                 <td><?php echo $patient['id']; ?></td>
                                 <td>
@@ -111,11 +109,22 @@ $result = mysqli_query($conn, $query);
                                     <div class="text-muted small"><?php echo $patient['gender']; ?></div>
                                 </td>
                                 <td>
+                                    <span class="badge <?php echo ($patient['action'] == 'enabled') ? 'bg-success' : 'bg-danger'; ?>">
+                                        <?php echo ucfirst($patient['action']); ?>
+                                    </span>
+                                </td>
+                                <td>
                                     <div class="btn-group">
-                                        <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                onclick="confirmDelete(<?php echo $patient['id']; ?>)">
-                                            <i class="fas fa-trash-alt"></i> Delete
-                                        </button>
+                                        <a href="toggle_patient_status.php?id=<?php echo $patient['id']; ?>" 
+                                           class="btn btn-sm <?php echo ($patient['action'] == 'enabled') ? 'btn-warning' : 'btn-success'; ?>">
+                                            <i class="fas <?php echo ($patient['action'] == 'enabled') ? 'fa-ban' : 'fa-check'; ?>"></i> 
+                                            <?php echo ($patient['action'] == 'enabled') ? 'Disable' : 'Enable'; ?>
+                                        </a>
+                                    
+                                        <a href="?delete=<?php echo $patient['id']; ?>" class="btn btn-sm btn-outline-danger"
+                           onclick="return confirm('Are you sure you want to delete this Patient?');">
+                            Delete
+                        </a>
                                     </div>
                                 </td>
                             </tr>
@@ -124,53 +133,19 @@ $result = mysqli_query($conn, $query);
                     </table>
                 </div>
 
-                <!-- Pagination -->
-                <?php if($total_pages > 1): ?>
-                <nav class="mt-4">
-                    <ul class="pagination justify-content-center">
-                        <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
-                            <a class="page-link" href="?page=<?php echo $page-1; ?>&search=<?php echo urlencode($search); ?>">
-                                Previous
-                            </a>
-                        </li>
-                        <?php for($i = 1; $i <= $total_pages; $i++): ?>
-                        <li class="page-item <?php echo $page == $i ? 'active' : ''; ?>">
-                            <a class="page-link" href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>">
-                                <?php echo $i; ?>
-                            </a>
-                        </li>
-                        <?php endfor; ?>
-                        <li class="page-item <?php echo $page >= $total_pages ? 'disabled' : ''; ?>">
-                            <a class="page-link" href="?page=<?php echo $page+1; ?>&search=<?php echo urlencode($search); ?>">
-                                Next
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-                <?php endif; ?>
             </div>
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Confirm Deletion</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    Are you sure you want to delete this patient record? This action cannot be undone.
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <a href="#" id="confirmDelete" class="btn btn-danger">Delete</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <script>
+        function confirmDelete(id) {
+            if (confirm("Are you sure you want to delete this patient?")) {
+                window.location.href = "manage_patients.php?delete=" + id;
+            }
+        }
+    </script>
+</body>
+</html>
     <style>
         /* Page Styles */
         .page-title {

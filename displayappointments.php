@@ -33,6 +33,7 @@ function getAppointmentsByStatus($conn, $status, $doctor_id) {
 // Get approved and rejected appointments for the logged-in doctor
 $approvedAppointments = getAppointmentsByStatus($conn, 'Approved', $doctor_id);
 $rejectedAppointments = getAppointmentsByStatus($conn, 'Rejected', $doctor_id);
+$pendingAppointments =  getAppointmentsByStatus($conn, 'pending', $doctor_id);
 
 // Close database connection when done
 $conn->close();
@@ -49,6 +50,7 @@ $conn->close();
     <style>
         body {
             font-family: 'Poppins', sans-serif;
+            
             
            
         }
@@ -87,7 +89,7 @@ $conn->close();
         }
 
         th {
-            background-color: #007bff;
+            background: linear-gradient(to right, #4e73df, #224abe);
             color: white;
         }
 
@@ -98,6 +100,10 @@ $conn->close();
 
         .status-rejected {
             color: #dc3545;
+            font-weight: bold;
+        }
+        .status-pending{
+            color:rgb(255, 131, 14);
             font-weight: bold;
         }
 
@@ -139,6 +145,7 @@ $conn->close();
     </style>
 </head>
 <body>
+
     <br>
     <br>
     <h1>Appointment Management</h1>
@@ -160,7 +167,48 @@ $conn->close();
                 ?>
             </div>
         <?php endif; ?>
+       
+        <div class="appointment-section">
+    <h2>Pending Appointments</h2>
+    <?php if(empty($pendingAppointments)): ?>
+        <p>No rejected appointments found.</p>
+    <?php else: ?>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Patient Name</th>
+                        <th>Date</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach($pendingAppointments as $appointment): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($appointment['id']); ?></td>
+                            <td>
+    <a href="patient_profiled2.php?id=<?php echo urlencode($appointment['user_id']); ?>" 
+       style="text-decoration: none; color: #007bff; font-weight: bold;">
+       <?php echo htmlspecialchars($appointment['patient_name'] ?? 'N/A'); ?>
+    </a>
+</td>
 
+                            <td><?php echo htmlspecialchars($appointment['appointment_date'] ?? 'N/A'); ?></td>
+                            <td><?php echo htmlspecialchars($appointment['appointment_time'] ?? 'N/A'); ?></td>
+                            <td><?php echo htmlspecialchars($appointment['appointment_end'] ?? 'N/A'); ?></td>
+                            <td class="status-pending"><?php echo htmlspecialchars($appointment['status']); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</div>
+<br>
+<br>
         <!-- Approved Appointments Section -->
         <div class="appointment-section">
             <h2>Approved Appointments</h2>
@@ -246,6 +294,8 @@ $conn->close();
         </div>
     <?php endif; ?>
 </div>
+<br>
+<br>
 
         
       
