@@ -95,7 +95,13 @@ if (isset($_GET['delete'])) {
                                              class="patient-avatar me-3" 
                                              onerror="this.onerror=null; this.src='images/profilepicdoct.jpg';">
                                         <div>
-                                            <div class="fw-bold"><?php echo htmlspecialchars($patient['name']); ?></div>
+                                            
+                                        <div class="fw-bold">
+    <a href="adminpatprofile.php?patient_id=<?php echo urlencode($patient['id']); ?>">
+        <?php echo htmlspecialchars($patient['name']); ?>
+    </a>
+</div>
+
                                             <div class="text-muted small">ID: <?php echo $patient['id']; ?></div>
                                         </div>
                                     </div>
@@ -212,6 +218,7 @@ if (isset($_GET['delete'])) {
         .btn-group .btn i {
             font-size: 0.875rem;
         }
+        .fw-bold a { text-decoration: none; color: inherit; }
 
         .btn-success {
             background: linear-gradient(135deg, #28a745 0%, #218838 100%);

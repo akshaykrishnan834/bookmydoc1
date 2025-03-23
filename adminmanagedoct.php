@@ -315,6 +315,7 @@ h2, h3 {
     padding: 6px 12px;
     border-radius: 4px;
 }
+.fw-bold a { text-decoration: none; color: inherit; }
         
     </style>
 </head>
@@ -396,6 +397,7 @@ h2, h3 {
 
     <hr>
 
+
     <!-- All Doctors Section -->
     <h3>Registered Doctors</h3>
     <table class="table">
@@ -419,7 +421,11 @@ h2, h3 {
                         <img src="<?php echo $doctor['profile_photo'] ?: 'assets/default-doctor.png'; ?>" 
                              class="doctor-photo" width="50" height="50" onerror="this.onerror=null; this.src='images/profilepicdoct.jpg';" >
                     </td>
-                    <td><?php echo htmlspecialchars($doctor['name']); ?></td>
+                    <td><div class="fw-bold">
+    <a href="admindoctprofile.php?doctor_id=<?php echo urlencode($doctor['id']); ?>">
+        <?php echo htmlspecialchars($doctor['name']); ?>
+    </a>
+</div></td>
                     <td><?php echo htmlspecialchars($doctor['specialization']); ?></td>
                     <td><?php echo htmlspecialchars($doctor['email']); ?><br><?php echo htmlspecialchars($doctor['phone']); ?></td>
                     <td>

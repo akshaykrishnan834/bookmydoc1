@@ -37,7 +37,25 @@ if(isset($_GET['filter']) || isset($_GET['search'])) {
         $search_term = mysqli_real_escape_string($conn, $_GET['search_term']);
     }
 }
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_feedback'])) {
+    if (!$patient_id) {
+        echo "<script>alert('Please log in to submit feedback.'); window.location.href='login.php';</script>";
+        exit();
+    }
 
+    $doctor_id = mysqli_real_escape_string($conn, $_POST['doctor_id']);
+    $rating = mysqli_real_escape_string($conn, $_POST['rating']);
+    $feedback_text = mysqli_real_escape_string($conn, $_POST['feedback_text']);
+
+    $feedback_insert = "INSERT INTO feedback (doctor_id, patient_id, rating, feedback_text, created_at) 
+                        VALUES ('$doctor_id', '$patient_id', '$rating', '$feedback_text', NOW())";
+    
+    if (mysqli_query($conn, $feedback_insert)) {
+        echo "<script>alert('Feedback submitted successfully!'); window.location.href='browsedoct.php';</script>";
+    } else {
+        echo "<script>alert('Error submitting feedback.');</script>";
+    }
+}
 // Build the query with filters
 // Build the query with filters
 $query = "SELECT * FROM doctorreg WHERE status = 'approved' AND action != 'disabled'";
@@ -164,6 +182,29 @@ $result = mysqli_query($conn, $query);
                                     echo "<p>No feedback yet.</p>";
                                 }
                                 ?>
+                                <!-- Feedback Submission Form -->
+                            <?php if ($patient_id): ?>
+                                <form method="POST">
+                                    <input type="hidden" name="doctor_id" value="<?php echo $row['id']; ?>">
+                                    <div class="mb-3">
+                                        <label for="rating" class="form-label">Rating:</label>
+                                        <select name="rating" id="rating" class="form-select" required>
+                                            <option value="5">5 - Excellent</option>
+                                            <option value="4">4 - Good</option>
+                                            <option value="3">3 - Average</option>
+                                            <option value="2">2 - Below Average</option>
+                                            <option value="1">1 - Poor</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="feedback_text" class="form-label">Your Feedback:</label>
+                                        <textarea name="feedback_text" id="feedback_text" class="form-control" required></textarea>
+                                    </div>
+                                    <button type="submit" name="submit_feedback" class="btn btn-success">Submit Feedback</button>
+                                </form>
+                            <?php else: ?>
+                                <p class="text-danger">Please log in to submit feedback.</p>
+                            <?php endif; ?>
                             </div>
                         </div>
                     </div>
