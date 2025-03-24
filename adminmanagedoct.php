@@ -4,16 +4,18 @@ include('db_connection.php');
 include('adminheader.php');
 
 // Handle enable/disable doctor action
-if (isset($_GET['toggle_action'])) {
+if (isset($_GET['toggle_action'])) { // Ensure the database connection is included
     $doctor_id = mysqli_real_escape_string($conn, $_GET['toggle_action']);
     $current_action = mysqli_real_escape_string($conn, $_GET['action']);
     
     $new_action = ($current_action == 'enabled') ? 'disabled' : 'enabled';
     $update_query = "UPDATE doctorreg SET action = '$new_action' WHERE id = '$doctor_id'";
     mysqli_query($conn, $update_query);
-    header("Location: manage_doctors.php");
+
+    echo "<script>window.location.href='" . $_SERVER['PHP_SELF'] . "';</script>";
     exit();
 }
+
 
 // Handle delete doctor action
 if (isset($_GET['delete'])) {

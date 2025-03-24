@@ -13,9 +13,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->bind_param("si", $rejection_reason, $doctor_id);
 
         if ($stmt->execute()) {
-            echo "<script>alert('Doctor has been rejected successfully.'); window.location.href = 'managedoctors.php';</script>";
+            echo "<script>alert('Doctor has been rejected successfully.'); window.location.href = 'adminmanagedoct.php';</script>";
         } else {
-            echo "<script>alert('Error rejecting doctor. Please try again.'); window.location.href = 'managedoctors.php';</script>";
+            echo "<script>alert('Error rejecting doctor. Please try again.'); window.location.href = 'adminmanagedoct.php';</script>";
         }
 
         $stmt->close();

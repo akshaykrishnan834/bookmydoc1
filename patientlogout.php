@@ -1,11 +1,7 @@
 <?php
 session_start();
-
-// Destroy session
-session_unset();
-session_destroy();
-
-// Redirect to login page
-header("Location: patientlog.php");
+session_unset(); // Unset all session variables
+session_destroy(); // Destroy the session
+header("Location: patientlog.php"); // Redirect to login page
 exit();
 ?>
