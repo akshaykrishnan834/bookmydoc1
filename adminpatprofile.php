@@ -1,4 +1,5 @@
-<?php require 'db_connection.php'; // Include database connection 
+<?php 
+require 'db_connection.php'; // Include database connection 
 
 if (isset($_GET['patient_id'])) {
     $patient_id = intval($_GET['patient_id']);
@@ -37,16 +38,17 @@ if (isset($_GET['patient_id'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #4361ee;
-            --primary-dark: #3a56d4;
-            --secondary-color: #f1f5f9;
-            --accent-color: #10b981;
+            --primary-color: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary-color: #f8fafc;
+            --accent-color: #14b8a6;
             --text-color: #1e293b;
             --text-light: #64748b;
-            --border-color: #e2e8f0;
-            --danger-color: #ef4444;
-            --hover-color: #f8fafc;
-            --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            --border-color: #e5e7eb;
+            --danger-color: #dc2626;
+            --hover-color: #f1f5f9;
+            --card-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            --gradient-light: rgba(255, 255, 255, 0.1);
         }
         
         * {
@@ -56,162 +58,228 @@ if (isset($_GET['patient_id'])) {
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f1f5f9;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
             color: var(--text-color);
             line-height: 1.6;
+            min-height: 100vh;
         }
         
         .container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 40px auto;
-            padding: 0;
-            border-radius: 16px;
-            background-color: transparent;
+            padding: 0 20px;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .header-card {
             background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-            border-radius: 16px;
-            padding: 30px;
-            margin-bottom: 25px;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
             box-shadow: var(--card-shadow);
             position: relative;
             color: white;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+        
+        .header-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, var(--gradient-light), transparent);
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        
+        .profile-photo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .profile-photo:hover {
+            transform: scale(1.05);
+        }
+        
+        .header-content {
+            flex: 1;
         }
         
         .back-button {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 10px 15px;
-            background-color: rgba(255, 255, 255, 0.15);
+            gap: 10px;
+            padding: 12px 20px;
+            background-color: var(--gradient-light);
             color: white;
             text-decoration: none;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.3s;
-            backdrop-filter: blur(5px);
-            margin-bottom: 15px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(8px);
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         .back-button:hover {
             background-color: rgba(255, 255, 255, 0.25);
-            transform: translateY(-2px);
+            transform: translateX(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
         
         h2 {
-            margin: 0;
-            font-size: 32px;
-            font-weight: 700;
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            position: relative;
+            z-index: 1;
         }
         
         .patient-meta {
-            margin-top: 5px;
+            margin-top: 10px;
             font-size: 16px;
             opacity: 0.9;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
         }
         
         .content-card {
-            background-color: white;
-            border-radius: 16px;
+            background: white;
+            border-radius: 20px;
             box-shadow: var(--card-shadow);
-            padding: 30px;
-            margin-bottom: 25px;
+            padding: 40px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            animation: slideUp 0.6s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         h3 {
             color: var(--primary-color);
-            font-size: 22px;
-            margin-bottom: 20px;
+            font-size: 24px;
+            margin-bottom: 25px;
             padding-bottom: 15px;
-            border-bottom: 2px solid var(--border-color);
+            border-bottom: 3px solid var(--accent-color);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            font-weight: 700;
         }
         
         h3 i {
-            color: var(--primary-color);
+            color: var(--accent-color);
+            font-size: 28px;
         }
         
         .patient-info {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
         }
         
         .info-group {
-            margin-bottom: 20px;
-            transition: all 0.3s;
-            padding: 5px;
-            border-radius: 8px;
+            padding: 10px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            background: var(--secondary-color);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
         
         .info-group:hover {
-            transform: translateY(-2px);
-            background-color: var(--hover-color);
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         }
         
         .info-label {
             font-weight: 600;
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             color: var(--text-light);
             font-size: 14px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }
         
         .info-value {
             font-size: 18px;
-            padding: 12px 15px;
-            background-color: var(--secondary-color);
-            border-radius: 8px;
-            display: block;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
             font-weight: 500;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .info-value:hover {
+            background: var(--hover-color);
         }
         
         .records {
-            margin-top: 15px;
+            margin-top: 20px;
         }
         
         table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            margin-top: 15px;
-            border-radius: 10px;
+            margin-top: 20px;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            background: white;
         }
         
         th, td {
-            padding: 15px 20px;
+            padding: 18px 25px;
             text-align: left;
         }
         
         th {
-            background-color: var(--primary-color);
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
             color: white;
-            font-weight: 500;
+            font-weight: 600;
             text-transform: uppercase;
             font-size: 14px;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+        }
+        
+        tr {
+            transition: all 0.3s ease;
         }
         
         tr:nth-child(even) {
             background-color: var(--secondary-color);
         }
         
-        tr {
-            transition: all 0.2s;
-        }
-        
         tr:hover {
             background-color: var(--hover-color);
-            transform: scale(1.005);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         }
         
         td {
@@ -221,56 +289,72 @@ if (isset($_GET['patient_id'])) {
         .download-btn {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 10px 15px;
-            background-color: var(--accent-color);
+            gap: 10px;
+            padding: 12px 20px;
+            background: linear-gradient(90deg, var(--accent-color), #0d9488);
             color: white;
             text-decoration: none;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.3s;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(20, 184, 166, 0.3);
         }
         
         .download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(20, 184, 166, 0.4);
+            background: linear-gradient(90deg, #14b8a6, #0d9488);
         }
         
         .no-records {
             text-align: center;
-            padding: 40px 20px;
-            background-color: var(--secondary-color);
+            padding: 50px 25px;
+            background: var(--secondary-color);
             border-radius: 12px;
             color: var(--text-light);
-            font-size: 16px;
-            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+            font-size: 18px;
+            box-shadow: inset 0 4px 15px rgba(0, 0, 0, 0.05);
+            animation: fadeIn 0.5s ease-in;
         }
         
         .no-records i {
-            font-size: 40px;
-            color: var(--text-light);
-            margin-bottom: 15px;
-            opacity: 0.7;
+            font-size: 48px;
+            color: var(--accent-color);
+            margin-bottom: 20px;
+            opacity: 0.8;
         }
         
         .badge {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 50px;
+            padding: 6px 14px;
+            border-radius: 20px;
             font-size: 14px;
-            font-weight: 500;
-            background-color: var(--primary-color);
+            font-weight: 600;
+            background: var(--accent-color);
             color: white;
-            margin-left: 10px;
+            margin-left: 15px;
+            box-shadow: 0 2px 8px rgba(20, 184, 166, 0.3);
         }
         
         @media (max-width: 768px) {
             .container {
-                margin: 20px 15px;
+                margin: 20px 10px;
+                padding: 0 15px;
             }
             
-            .header-card, .content-card {
-                padding: 20px;
+            .header-card {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 25px;
+            }
+            
+            .profile-photo {
+                width: 100px;
+                height: 100px;
+                margin-bottom: 20px;
+            }
+            
+            .content-card {
+                padding: 25px;
             }
             
             .patient-info {
@@ -278,12 +362,16 @@ if (isset($_GET['patient_id'])) {
             }
             
             h2 {
-                font-size: 24px;
+                font-size: 28px;
             }
             
             th, td {
-                padding: 12px 10px;
-                font-size: 14px;
+                padding: 14px 12px;
+                font-size: 13px;
+            }
+            
+            .download-btn {
+                padding: 10px 15px;
             }
         }
     </style>
@@ -291,14 +379,22 @@ if (isset($_GET['patient_id'])) {
 <body>
     <div class="container">
         <div class="header-card">
-            <a href="adminmanagepatient.php" class="back-button">
-                <i class="fas fa-arrow-left"></i> Back to Patient List
-            </a>
-            <h2><?php echo htmlspecialchars($patient['name']); ?></h2>
-            <div class="patient-meta">
-                ID: <?php echo htmlspecialchars($patient['id']); ?> | 
-                <?php echo htmlspecialchars($patient['age']); ?> Years | 
-                <?php echo htmlspecialchars($patient['gender']); ?>
+            <!-- Profile Photo -->
+            <img src="<?php echo htmlspecialchars($patient['profile_pic'] ?? 'default_profile.jpg'); ?>" 
+            onerror="this.onerror=null; this.src='images/profilepicdoct.jpg';" 
+                 alt="Profile Photo" 
+                 class="profile-photo">
+            
+            <div class="header-content">
+                <a href="adminmanagepatient.php" class="back-button">
+                    <i class="fas fa-arrow-left"></i> Back to Patients
+                </a>
+                <h2><?php echo htmlspecialchars($patient['name']); ?></h2>
+                <div class="patient-meta">
+                    ID: <?php echo htmlspecialchars($patient['id']); ?> | 
+                    <?php echo htmlspecialchars($patient['age']); ?> Years | 
+                    <?php echo htmlspecialchars($patient['gender']); ?>
+                </div>
             </div>
         </div>
         
@@ -309,23 +405,32 @@ if (isset($_GET['patient_id'])) {
             <div class="patient-info">
                 <div class="info-group">
                     <span class="info-label">Full Name</span>
-                    <span class="info-value"><?php echo htmlspecialchars($patient['name']); ?></span>
+                    <span class="info-value">
+                        <i class="fas fa-user fa-sm" style="color: var(--accent-color);"></i>
+                        <?php echo htmlspecialchars($patient['name']); ?>
+                    </span>
                 </div>
                 
                 <div class="info-group">
                     <span class="info-label">Age</span>
-                    <span class="info-value"><?php echo htmlspecialchars($patient['age']); ?> Years</span>
+                    <span class="info-value">
+                        <i class="fas fa-calendar fa-sm" style="color: var(--accent-color);"></i>
+                        <?php echo htmlspecialchars($patient['age']); ?> Years
+                    </span>
                 </div>
                 
                 <div class="info-group">
                     <span class="info-label">Gender</span>
-                    <span class="info-value"><?php echo htmlspecialchars($patient['gender']); ?></span>
+                    <span class="info-value">
+                        <i class="fas fa-venus-mars fa-sm" style="color: var(--accent-color);"></i>
+                        <?php echo htmlspecialchars($patient['gender']); ?>
+                    </span>
                 </div>
                 
                 <div class="info-group">
                     <span class="info-label">Contact Number</span>
                     <span class="info-value">
-                        <i class="fas fa-phone fa-sm" style="color: var(--text-light);"></i> 
+                        <i class="fas fa-phone fa-sm" style="color: var(--accent-color);"></i>
                         <?php echo htmlspecialchars($patient['phone']); ?>
                     </span>
                 </div>
@@ -333,7 +438,7 @@ if (isset($_GET['patient_id'])) {
                 <div class="info-group">
                     <span class="info-label">Email Address</span>
                     <span class="info-value">
-                        <i class="fas fa-envelope fa-sm" style="color: var(--text-light);"></i> 
+                        <i class="fas fa-envelope fa-sm" style="color: var(--accent-color);"></i>
                         <?php echo htmlspecialchars($patient['email']); ?>
                     </span>
                 </div>
@@ -361,7 +466,7 @@ if (isset($_GET['patient_id'])) {
                             <tr>
                                 <td><?php echo htmlspecialchars($record['record_id']); ?></td>
                                 <td>
-                                    <i class="fas fa-file-pdf" style="color: var(--danger-color);"></i>
+                                    <i class="fas fa-file-pdf" style="color: var(--danger-color); margin-right: 8px;"></i>
                                     <?php echo htmlspecialchars($record['record_filename']); ?>
                                 </td>
                                 <td><?php echo htmlspecialchars($record['uploaded_at']); ?></td>
@@ -376,8 +481,8 @@ if (isset($_GET['patient_id'])) {
                 <?php } else { ?>
                     <div class="no-records">
                         <i class="fas fa-file-medical"></i>
-                        <p>No medical records found for this patient.</p>
-                        <p style="margin-top: 10px; font-size: 14px;">Records will appear here once uploaded.</p>
+                        <p>No medical records found.</p>
+                        <p style="margin-top: 15px; font-size: 16px;">Upload records to view them here.</p>
                     </div>
                 <?php } ?>
             </div>

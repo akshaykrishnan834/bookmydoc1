@@ -71,8 +71,6 @@ include 'db_connection.php'; // Your DB connection file
                     </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="admindashboard.php"><i class="fas fa-id-card me-2"></i>Profile</a></li>
-                    <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item text-danger" href="adminlogout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                 </ul>
             </div>

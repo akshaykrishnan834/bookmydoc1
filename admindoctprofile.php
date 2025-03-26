@@ -1,4 +1,5 @@
-<?php require 'db_connection.php'; // Include database connection 
+<?php 
+require 'db_connection.php'; // Include database connection 
 
 if (isset($_GET['doctor_id'])) {
     $doctor_id = intval($_GET['doctor_id']);
@@ -16,7 +17,6 @@ if (isset($_GET['doctor_id'])) {
         echo "<p>No doctor found.</p>";
         exit;
     }
-    
 } else {
     echo "<p>Invalid request.</p>";
     exit;
@@ -31,17 +31,17 @@ if (isset($_GET['doctor_id'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #4361ee;
-            --primary-light: #7289da;
-            --primary-dark: #3a56e4;
-            --secondary-color: #f1f5ff;
-            --accent-color: #00b4d8;
-            --text-color: #2a2a2a;
-            --text-light: #6e7079;
-            --border-color: #e4e9f7;
+            --primary-color: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary-color: #f8fafc;
+            --accent-color: #14b8a6;
+            --text-color: #1e293b;
+            --text-light: #64748b;
+            --border-color: #e5e7eb;
             --success-color: #2ecc71;
             --white: #ffffff;
-            --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            --card-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            --gradient-light: rgba(255, 255, 255, 0.1);
         }
         
         * {
@@ -51,129 +51,170 @@ if (isset($_GET['doctor_id'])) {
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fd;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
             color: var(--text-color);
             line-height: 1.6;
+            min-height: 100vh;
         }
         
         .container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 40px auto;
             padding: 0 20px;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .card {
-            background-color: var(--white);
+            background: var(--white);
             border-radius: 20px;
             box-shadow: var(--card-shadow);
             overflow: hidden;
+            animation: slideUp 0.6s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .profile-header {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             color: var(--white);
-            padding: 30px;
+            padding: 40px;
             position: relative;
-        }
-        
-        .back-button {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background-color: rgba(255, 255, 255, 0.2);
-            color: var(--white);
-            border: none;
-            border-radius: 50px;
-            padding: 10px 20px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.3s ease;
+            gap: 30px;
+            overflow: hidden;
         }
         
-        .back-button:hover {
-            background-color: rgba(255, 255, 255, 0.3);
-            transform: translateX(-5px);
+        .profile-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, var(--gradient-light), transparent);
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        
+        .profile-photo {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--white);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .profile-photo:hover {
+            transform: scale(1.05);
         }
         
         .profile-title {
-            text-align: center;
-            margin-top: 15px;
+            flex: 1;
+            position: relative;
+            z-index: 1;
         }
         
         .profile-title h2 {
-            font-size: 30px;
-            margin-bottom: 5px;
+            font-size: 34px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
         
         .profile-title p {
             font-size: 18px;
             opacity: 0.9;
+            font-weight: 500;
         }
         
-        .profile-avatar {
-            width: 120px;
-            height: 120px;
-            background-color: var(--white);
-            border-radius: 50%;
+        .back-button {
+            position: absolute;
+            top: 20px;
+            right: 20px; /* Changed from left to right */
+            background: var(--gradient-light);
+            color: var(--white);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 12px 20px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
+            gap: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(8px);
+        }
+        
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateX(5px); /* Changed to positive value for right-side movement */
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
         
-        .profile-avatar i {
-            font-size: 60px;
-            color: var(--primary-color);
-        }
-        
         .profile-body {
-            padding: 30px;
+            padding: 40px;
         }
         
         .section-title {
             color: var(--primary-color);
-            font-size: 22px;
-            margin-bottom: 20px;
+            font-size: 24px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid var(--accent-color);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            font-weight: 700;
+        }
+        
+        .section-title i {
+            color: var(--accent-color);
+            font-size: 28px;
         }
         
         .doctor-info {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 25px;
         }
         
         .info-card {
-            background-color: var(--secondary-color);
+            background: var(--secondary-color);
             border-radius: 15px;
             padding: 20px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
         
         .info-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         }
         
         .info-header {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             margin-bottom: 15px;
         }
         
         .info-icon {
-            width: 40px;
-            height: 40px;
-            background-color: var(--primary-color);
-            border-radius: 10px;
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -181,7 +222,7 @@ if (isset($_GET['doctor_id'])) {
         
         .info-icon i {
             color: var(--white);
-            font-size: 18px;
+            font-size: 20px;
         }
         
         .info-title {
@@ -189,7 +230,7 @@ if (isset($_GET['doctor_id'])) {
             font-size: 14px;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }
         
         .info-content {
@@ -200,18 +241,19 @@ if (isset($_GET['doctor_id'])) {
         
         .specialty-badge {
             display: inline-block;
-            background-color: var(--accent-color);
+            background: var(--accent-color);
             color: var(--white);
             padding: 8px 15px;
             border-radius: 50px;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
             margin-top: 5px;
+            box-shadow: 0 2px 8px rgba(20, 184, 166, 0.3);
         }
         
         .experience-years {
-            font-size: 36px;
-            font-weight: 700;
+            font-size: 40px;
+            font-weight: 800;
             color: var(--primary-color);
             margin-bottom: 5px;
         }
@@ -219,12 +261,13 @@ if (isset($_GET['doctor_id'])) {
         .years-label {
             font-size: 14px;
             color: var(--text-light);
+            font-weight: 500;
         }
         
         .contact-actions {
             display: flex;
-            gap: 15px;
-            margin-top: 30px;
+            gap: 20px;
+            margin-top: 40px;
         }
         
         .contact-btn {
@@ -233,25 +276,26 @@ if (isset($_GET['doctor_id'])) {
             align-items: center;
             justify-content: center;
             gap: 10px;
-            background-color: var(--primary-color);
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
             color: var(--white);
-            padding: 12px 20px;
-            border-radius: 10px;
+            padding: 14px 25px;
+            border-radius: 12px;
             text-decoration: none;
-            font-weight: 500;
+            font-weight: 600;
             transition: all 0.3s ease;
             border: none;
             cursor: pointer;
         }
         
         .contact-btn.secondary {
-            background-color: var(--secondary-color);
+            background: var(--secondary-color);
             color: var(--primary-color);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
         
         .contact-btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
         
         .qualifications-card {
@@ -260,47 +304,32 @@ if (isset($_GET['doctor_id'])) {
         
         @media (max-width: 768px) {
             .container {
-                margin: 20px auto;
+                margin: 20px 10px;
+                padding: 0 15px;
             }
             
             .profile-header {
-                padding: 20px;
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 25px;
             }
             
-            .back-button {
-                top: 15px;
-                left: 15px;
-                padding: 8px 15px;
-            }
             .profile-photo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-            .profile-avatar {
-                width: 100px;
-                height: 100px;
-            }
-            .profile-photo-container {
-            position: relative;
-            width: 180px;
-            height: 180px;
-            margin: 0 auto 1.5rem;
-            border-radius: 50%;
-            overflow: hidden;
-            border: 4px solid var(--white);
-            box-shadow: var(--shadow);
-        }
-            .profile-avatar i {
-                font-size: 50px;
+                width: 120px;
+                height: 120px;
+                margin-bottom: 20px;
             }
             
             .profile-title h2 {
-                font-size: 24px;
+                font-size: 28px;
             }
             
             .profile-title p {
                 font-size: 16px;
+            }
+            
+            .profile-body {
+                padding: 25px;
             }
             
             .doctor-info {
@@ -309,6 +338,12 @@ if (isset($_GET['doctor_id'])) {
             
             .contact-actions {
                 flex-direction: column;
+                gap: 15px;
+            }
+            
+            .back-button {
+                top: 15px;
+                right: 15px; /* Adjusted for mobile */
             }
         }
     </style>
@@ -320,9 +355,9 @@ if (isset($_GET['doctor_id'])) {
                 <a href="adminmanagedoct.php" class="back-button">
                     <i class="fas fa-arrow-left"></i> Back
                 </a>
-                
-                
-                
+                <img src="<?php echo htmlspecialchars($doctor['profile_photo'] ?? 'default_doctor.jpg'); ?>" 
+                      onerror="this.onerror=null; this.src='images/profilepicdoct.jpg';"
+                     class="profile-photo">
                 <div class="profile-title">
                     <h2><?php echo htmlspecialchars($doctor['name']); ?></h2>
                     <p><?php echo htmlspecialchars($doctor['specialization']); ?></p>

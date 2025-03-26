@@ -6,7 +6,6 @@ define('RAZORPAY_KEY_SECRET', '335hWwGIo6uyV9PYp8kXWMej');
 include('db_connection.php'); 
 include('patientheader.php'); 
 
-
 // Check if appointment ID is provided
 if(!isset($_GET['appointment_id']) || empty($_GET['appointment_id'])) {
     echo "<script>alert('No appointment selected!'); window.location.href='my_appointments.php';</script>";
@@ -77,7 +76,7 @@ if (isset($_POST['process_payment']) && !$payment_made) {
             $update_sql = "UPDATE appointment_requests SET payment_status = 'Paid' WHERE id = ?";
             $update_stmt = $conn->prepare($update_sql);
             $update_stmt->bind_param("i", $appointment_id);
-            $update_stmt->execute(); // Actually run the update query
+            $update_stmt->execute();
             
             // Set payment success flag
             $payment_success = true;
@@ -91,7 +90,6 @@ if (isset($_POST['process_payment']) && !$payment_made) {
         }
     }
 }
-
 
 // Format appointment ID with APT prefix
 $formatted_apt_id = 'APT' . $appointment_id;
@@ -120,19 +118,19 @@ if (isset($_GET['success']) && $_GET['success'] == 'true') {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-        background-color: #f8f9fa;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .container2 {
-        max-width: 900px;
-        margin-top: 30px;
-        margin-left: auto;
-        margin-right: auto;
-        background-color: #fff;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        padding: 30px;
-    }
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container2 {
+            max-width: 900px;
+            margin-top: 30px;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 30px;
+        }
         .page-header {
             border-bottom: 1px solid #dee2e6;
             padding-bottom: 15px;
@@ -263,7 +261,6 @@ if (isset($_GET['success']) && $_GET['success'] == 'true') {
             <div class="date-time">
                 Date: <?php echo date('Y-m-d'); ?> | Time: <?php echo date('h:i A'); ?>
             </div>
-
         </div>
 
         <div class="info-grid">
@@ -315,6 +312,13 @@ if (isset($_GET['success']) && $_GET['success'] == 'true') {
             </div>
         </div>
 
+        <!-- Add Print Button -->
+        <div style="margin-bottom: 30px; text-align: right;">
+            <button id="print-button" class="pay-button" style="background-color: #007bff; width: auto; padding: 10px 20px;">
+                Print Payment Details
+            </button>
+        </div>
+
         <?php if($payment_made): ?>
             <div class="payment-methods" style="text-align: center;">
                 <div style="background-color: #d4edda; color: #155724; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
@@ -348,6 +352,7 @@ if (isset($_GET['success']) && $_GET['success'] == 'true') {
 
     <script>
         $(document).ready(function(){
+            // Razorpay payment handling
             $('#rzp-button').click(function(e){
                 e.preventDefault();
                 
@@ -416,6 +421,137 @@ if (isset($_GET['success']) && $_GET['success'] == 'true') {
                         alert('Could not create order. Please try again.');
                     }
                 });
+            });
+
+            // Print functionality
+            $('#print-button').click(function(){
+                // Create a new window for printing
+                var printWindow = window.open('', '_blank');
+                
+                // Get the content we want to print
+                var content = `
+                    <html>
+                    <head>
+                       
+                        <title>Payment Receipt - <?php echo $formatted_apt_id; ?></title>
+                        <style>
+                            body {
+                                font-family: Arial, sans-serif;
+                                margin: 20px;
+                            }
+                            .receipt-container {
+                                max-width: 800px;
+                                margin: 0 auto;
+                                padding: 20px;
+                                border: 1px solid #ccc;
+                            }
+                            .header {
+                                text-align: center;
+                                margin-bottom: 20px;
+                            }
+                            .details-table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                margin-bottom: 20px;
+                            }
+                            .details-table td {
+                                padding: 8px;
+                                border: 1px solid #ddd;
+                            }
+                            .label {
+                                font-weight: bold;
+                                width: 40%;
+                            }
+                            .summary-table {
+                                width: 60%;
+                                margin-left: auto;
+                                border-collapse: collapse;
+                            }
+                            .summary-table td {
+                                padding: 8px;
+                                border: 1px solid #ddd;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="receipt-container">
+                            <div class="header">
+                            <h1>BOOK MY DOC - Online Doctor Appointment Booking System</h1>
+                                <h2>Payment Receipt</h2>
+                                <p>Date: <?php echo date('Y-m-d'); ?> | Time: <?php echo date('h:i A'); ?></p>
+                            </div>
+                            
+                            <table class="details-table">
+                                <tr>
+                                    <td class="label">Appointment ID</td>
+                                    <td><?php echo $formatted_apt_id; ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Patient ID</td>
+                                    <td><?php echo $formatted_pat_id; ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Patient Name</td>
+                                    <td><?php echo htmlspecialchars($appointment['patient_name']); ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Doctor Name</td>
+                                    <td>Dr. <?php echo htmlspecialchars($appointment['doctor_name']); ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Specialization</td>
+                                    <td><?php echo htmlspecialchars($appointment['specialization']); ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Appointment Date</td>
+                                    <td><?php echo date('Y-m-d', strtotime($appointment['appointment_date'])); ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Appointment Time</td>
+                                    <td><?php echo date('h:i A', strtotime($appointment['start_time'])); ?></td>
+                                </tr>
+                                <?php if($payment_made): ?>
+                                <tr>
+                                    <td class="label">Transaction ID</td>
+                                    <td><?php echo htmlspecialchars($payment_data['transaction_id']); ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Payment Date</td>
+                                    <td><?php echo date('Y-m-d h:i A', strtotime($payment_data['payment_date'])); ?></td>
+                                </tr>
+                                <?php endif; ?>
+                            </table>
+
+                            <table class="summary-table">
+                                <tr>
+                                    <td>Consultation Fee</td>
+                                    <td>₹<?php echo number_format($consultation_fee, 2); ?></td>
+                                </tr>
+                                <tr>
+                                    <td>Tax</td>
+                                    <td>₹<?php echo number_format($tax, 2); ?></td>
+                                </tr>
+                                <tr>
+                                    <td>Additional Charges</td>
+                                    <td>₹<?php echo number_format($additional_charges, 2); ?></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total Amount</strong></td>
+                                    <td><strong>₹<?php echo number_format($total_amount, 2); ?></strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </body>
+                    </html>
+                `;
+                
+                // Write content to the new window and print
+                printWindow.document.write(content);
+                printWindow.document.close();
+                printWindow.focus();
+                printWindow.print();
+                // Uncomment the next line if you want the print window to close automatically after printing
+                // printWindow.close();
             });
         });
     </script>

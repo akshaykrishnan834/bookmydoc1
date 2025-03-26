@@ -32,7 +32,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $row = $result->fetch_assoc();
 
             if (password_verify($password, $row['password'])) {
-                // Correct password, start session
+                // Check if doctor account is disabled
+                if (isset($row['action']) && $row['action'] === 'disabled') {
+                    $_SESSION['id'] = $row['id'];
+                    $_SESSION['email'] = $row['email'];
+                    echo "<script>
+                        window.location.href = 'doctor_disabled_notice.php';
+                    </script>";
+                    exit();
+                }
+                
+                // Account is enabled, proceed with login
                 $_SESSION['id'] = $row['id'];
                 $_SESSION['email'] = $row['email'];
                 header("Location: doctorprofile.php");

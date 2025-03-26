@@ -19,7 +19,6 @@ if ($conn->connect_error) {
 
 $patient_id = $_SESSION['id'];
 
-// Fetch patient data including profile photo
 $stmt = $conn->prepare("SELECT name, email, phone, gender, dob, profile_pic FROM patientreg WHERE id = ?");
 $stmt->bind_param("i", $patient_id);
 $stmt->execute();
@@ -27,7 +26,6 @@ $result = $stmt->get_result();
 $patient = $result->fetch_assoc();
 $stmt->close();
 
-// Calculate age from date of birth
 $age = null;
 if (!empty($patient['dob'])) {
     $birthDate = new DateTime($patient['dob']);
@@ -37,7 +35,6 @@ if (!empty($patient['dob'])) {
 
 $conn->close();
 
-// Get first letter of name for avatar fallback
 $firstLetter = !empty($patient['name']) ? strtoupper(substr($patient['name'], 0, 1)) : '?';
 ?>
 
@@ -53,260 +50,245 @@ $firstLetter = !empty($patient['name']) ? strtoupper(substr($patient['name'], 0,
             --primary-color: #2c6bed;
             --secondary-color: #66b5ff;
             --accent-color: #ff6b6b;
-            --background-color: #f5f9ff;
+            --background-color: #f0f4f8;
             --card-background: #ffffff;
-            --text-color: #333333;
+            --text-color: #2c3e50;
             --text-muted: #6c757d;
-            --border-radius: 20px;
-            --box-shadow: 0 10px 30px rgba(44, 107, 237, 0.1);
         }
-        
-        body {
-            background-color: var(--background-color);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            color: var(--text-color);
-        }
-        
+
         .container2 {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-        
+    max-width: 1100px;
+    padding: 20px;
+    position: absolute;
+    top: 150px; /* Adjust this value to control distance from top */
+    left: 50%;
+    transform: translateX(-50%); /* Only translate horizontally */
+    width: 100%;
+}
         .profile-card {
             background: var(--card-background);
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(44, 107, 237, 0.15);
+            display: flex;
             overflow: hidden;
-            margin-top: 20px;
-            transition: transform 0.3s ease;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 1100px;
         }
-        
+
         .profile-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(44, 107, 237, 0.2);
         }
-        
-        .profile-header {
+
+        .profile-left {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            padding: 60px 40px;
+            width: 35%;
+            padding: 40px;
             color: white;
-            text-align: center;
-            position: relative;
-        }
-        
-        .profile-avatar {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            margin: 0 auto 20px;
-            border: 5px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-            position: relative;
-            background-color: white;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
         }
-        
+
+        .profile-avatar {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .profile-avatar:hover {
+            transform: scale(1.05);
+        }
+
         .profile-avatar img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        
+
         .avatar-text {
-            font-size: 3.5rem;
+            font-size: 3rem;
             color: var(--primary-color);
-            font-weight: bold;
+            font-weight: 700;
         }
-        
+
         .profile-name {
-            font-size: 2.2rem;
+            font-size: 1.8rem;
             margin: 0;
+            text-align: center;
+            font-weight: 600;
             letter-spacing: 0.5px;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        
+
         .profile-role {
-            font-size: 1rem;
-            margin-top: 5px;
+            font-size: 0.9rem;
+            margin-top: 8px;
             opacity: 0.9;
-            letter-spacing: 1px;
             text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
         }
-        
-        .profile-content {
+
+        .profile-right {
+            width: 65%;
             padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
-        
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
         .info-item {
             background: rgba(44, 107, 237, 0.05);
-            padding: 25px;
+            padding: 20px;
             border-radius: 15px;
-            margin-bottom: 20px;
             transition: all 0.3s ease;
-            border-left: 4px solid transparent;
         }
-        
+
         .info-item:hover {
             background: rgba(44, 107, 237, 0.1);
-            border-left: 4px solid var(--primary-color);
-            transform: translateX(5px);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         }
-        
+
         .info-label {
             color: var(--text-muted);
             font-weight: 600;
-            margin-bottom: 10px;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
         }
-        
+
         .info-label i {
             margin-right: 10px;
             color: var(--primary-color);
-            font-size: 1.2rem;
+            font-size: 1.1rem;
         }
-        
+
         .info-value {
-            font-size: 1.2rem;
-            color: var(--text-color);
+            font-size: 1.1rem;
             font-weight: 500;
-            padding-left: 30px;
+            color: var(--text-color);
         }
-        
-       .action-button {
-            text-align: center;
-            margin-top: 30px;
+
+        .action-button {
             display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
             justify-content: center;
+            gap: 15px;
         }
-        
+
         .profile-btn {
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
             color: white;
             border: none;
-            padding: 15px 25px;
-            border-radius: 30px;
+            padding: 12px 25px;
+            border-radius: 25px;
             font-size: 0.9rem;
             font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 5px 15px rgba(44, 107, 237, 0.3);
-            letter-spacing: 0.5px;
-            display: inline-flex;
-            align-items: center;
             text-decoration: none;
+            display: flex;
+            align-items: center;
         }
-        
+
         .profile-btn i {
             margin-right: 8px;
         }
-        
+
         .profile-btn:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 20px rgba(44, 107, 237, 0.4);
         }
-        
-        .profile-btn:active {
-            transform: translateY(0);
-        }
-        
-        .reset-password-btn {
-            background: linear-gradient(to right, #ff6b6b, #ff8e8e);
-        }
-        
-        .reset-contact-btn {
-            background: linear-gradient(to right, #4CAF50, #8BC34A);
-        }
-        
-        .change-photo-btn {
-            background: linear-gradient(to right, #9C27B0, #E040FB);
-        }
-        
-        .photo-badge {
-            position: absolute;
-            bottom: 0px;
-            right: 0px;
-            background: var(--primary-color);
-            color: white;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            border: 3px solid white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .photo-badge:hover {
-            background: var(--secondary-color);
-            transform: scale(1.1);
-        }
-        
+
         @media (max-width: 768px) {
-            .profile-btn {
-                padding: 12px 20px;
-                font-size: 0.85rem;
-                width: calc(50% - 10px);
+            .profile-card {
+                flex-direction: column;
             }
             
-            .action-button {
-                padding: 0 15px;
+            .profile-left, .profile-right {
+                width: 100%;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
             }
             
             .profile-avatar {
                 width: 120px;
                 height: 120px;
             }
+            
+            .profile-name {
+                font-size: 1.5rem;
+            }
+            
+            .container2 {
+                padding: 10px;
+            }
         }
-        
     </style>
 </head>
 <body>
+    
     <div class="container2">
         <?php if ($patient): ?>
             <div class="profile-card">
-                <div class="profile-header">
+                <div class="profile-left">
                     <div class="profile-avatar">
                         <?php if (!empty($patient['profile_pic'])): ?>
-                            <img src="<?php echo htmlspecialchars( $patient['profile_pic']); ?>" alt="Profile Photo">
+                            <img src="<?php echo htmlspecialchars($patient['profile_pic']); ?>" alt="Profile Photo">
                         <?php else: ?>
                             <div class="avatar-text"><?php echo $firstLetter; ?></div>
                         <?php endif; ?>
-                        
                     </div>
                     <h1 class="profile-name"><?php echo htmlspecialchars($patient['name']); ?></h1>
                     <p class="profile-role">Patient</p>
                 </div>
-                <div class="profile-content">
-                    <div class="info-item">
-                        <div class="info-label"><i class="fas fa-phone"></i> Phone Number</div>
-                        <div class="info-value"><?php echo htmlspecialchars($patient['phone']); ?></div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label"><i class="fas fa-envelope"></i> Email Address</div>
-                        <div class="info-value"><?php echo htmlspecialchars($patient['email']); ?></div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label"><i class="fas fa-birthday-cake"></i> Date of Birth</div>
-                        <div class="info-value"><?php echo !empty($patient['dob']) ? htmlspecialchars(date('F j, Y', strtotime($patient['dob']))) : 'Not provided'; ?></div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label"><i class="fas fa-user"></i> Age</div>
-                        <div class="info-value"><?php echo $age !== null ? htmlspecialchars($age) . ' years' : 'Not available'; ?></div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label"><i class="fas fa-venus-mars"></i> Gender</div>
-                        <div class="info-value"><?php echo !empty($patient['gender']) ? htmlspecialchars($patient['gender']) : 'Not provided'; ?></div>
+                <div class="profile-right">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label"><i class="fas fa-phone"></i> Phone</div>
+                            <div class="info-value"><?php echo htmlspecialchars($patient['phone']); ?></div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label"><i class="fas fa-envelope"></i> Email</div>
+                            <div class="info-value"><?php echo htmlspecialchars($patient['email']); ?></div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label"><i class="fas fa-birthday-cake"></i> DOB</div>
+                            <div class="info-value"><?php echo !empty($patient['dob']) ? htmlspecialchars(date('F j, Y', strtotime($patient['dob']))) : 'Not provided'; ?></div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label"><i class="fas fa-user"></i> Age</div>
+                            <div class="info-value"><?php echo $age !== null ? htmlspecialchars($age) . ' years' : 'N/A'; ?></div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label"><i class="fas fa-venus-mars"></i> Gender</div>
+                            <div class="info-value"><?php echo !empty($patient['gender']) ? htmlspecialchars($patient['gender']) : 'Not provided'; ?></div>
+                        </div>
                     </div>
                     <div class="action-button">
                         <a href="patientupdatebutton.php?id=<?php echo $patient_id; ?>" class="profile-btn">
@@ -317,11 +299,11 @@ $firstLetter = !empty($patient['name']) ? strtoupper(substr($patient['name'], 0,
             </div>
         <?php else: ?>
             <div class="profile-card">
-                <div class="profile-header">
+                <div class="profile-left">
                     <h1 class="profile-name">Profile Not Found</h1>
                 </div>
-                <div class="profile-content">
-                    <p style="text-align:center; padding: 20px;">Your profile information could not be found. Please contact support for assistance.</p>
+                <div class="profile-right">
+                    <p style="text-align: center; padding: 20px;">Your profile information could not be found. Please contact support.</p>
                     <div class="action-button">
                         <a href="patientprofile.php" class="profile-btn">
                             <i class="fas fa-home"></i> Return Home

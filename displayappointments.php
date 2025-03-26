@@ -13,7 +13,7 @@ function getAppointmentsByStatus($conn, $status, $doctor_id) {
             FROM appointment_requests a
             LEFT JOIN patientreg p ON a.user_id = p.id
             LEFT JOIN doctor_availability s ON a.slot_id = s.id
-            WHERE a.status = ? AND s.doctor_id = ?"; // Fetch rejection_reason too
+            WHERE a.status = ? AND s.doctor_id = ?";
             
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("si", $status, $doctor_id);
@@ -29,8 +29,7 @@ function getAppointmentsByStatus($conn, $status, $doctor_id) {
     return $appointments;
 }
 
-
-// Get approved and rejected appointments for the logged-in doctor
+// Get appointments for the logged-in doctor
 $approvedAppointments = getAppointmentsByStatus($conn, 'Approved', $doctor_id);
 $rejectedAppointments = getAppointmentsByStatus($conn, 'Rejected', $doctor_id);
 $pendingAppointments =  getAppointmentsByStatus($conn, 'pending', $doctor_id);
@@ -44,179 +43,203 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Appointment Status</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Appointment Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #4a6cf7;
+            --secondary-color: #6a7ce0;
+            --text-color: #333;
+            --light-bg: #f4f7ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Poppins', sans-serif;
-            
-            
-           
-        }
-        
-        h1 {
-            text-align: center;
-            font-size: 36px;
-            color: #333;
-            margin-bottom: 40px;
-        }
-        
-        .container2 {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-           
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            line-height: 1.6;
         }
 
-        
-
-        h2 {
-            font-size: 28px;
-            color: #007bff;
-            margin-bottom: 20px;
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 15px;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            padding: 15px;
-            text-align: left;
-            border: 1px solid #ddd;
-        }
-
-        th {
-            background: linear-gradient(to right, #4e73df, #224abe);
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(74, 108, 247, 0.15);
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .appointment-section {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+        }
+
+        .appointment-section h2 {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .table {
+            --bs-table-bg: transparent;
+            --bs-table-accent-bg: transparent;
+        }
+
+        .table th {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .table td {
+            vertical-align: middle;
+            border-color: #e9ecef;
+        }
+
+        .status-chip {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
         }
 
         .status-approved {
+            background-color: rgba(40, 167, 69, 0.1);
             color: #28a745;
-            font-weight: bold;
         }
 
         .status-rejected {
+            background-color: rgba(220, 53, 69, 0.1);
             color: #dc3545;
-            font-weight: bold;
-        }
-        .status-pending{
-            color:rgb(255, 131, 14);
-            font-weight: bold;
         }
 
-        .alert {
-            margin-bottom: 20px;
-            padding: 15px;
-            border-radius: 5px;
+        .status-pending {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
         }
 
-        .alert-success {
-            background-color: #28a745;
-            color: white;
-        }
-
-        .alert-danger {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        .btn-back {
-            display: inline-block;
-            background-color: #007bff;
-            color: white;
-            padding: 12px 20px;
+        .patient-link {
+            color: var(--primary-color);
             text-decoration: none;
-            border-radius: 5px;
-            margin-top: 20px;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
+            font-weight: 600;
+            transition: color 0.3s ease;
         }
 
-        .btn-back:hover {
-            background-color: #0056b3;
+        .patient-link:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
         }
 
-        .table-responsive {
-            overflow-x: auto;
+        .empty-state {
+            text-align: center;
+            color: #6c757d;
+            padding: 2rem;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                text-align: center;
+            }
         }
     </style>
 </head>
 <body>
-
-    <br>
-    <br>
-    <h1>Appointment Management</h1>
-    <div class="container2">
-        <?php if(isset($_SESSION['success'])): ?>
-            <div class="alert alert-success">
-                <?php 
-                    echo $_SESSION['success']; 
-                    unset($_SESSION['success']);
-                ?>
-            </div>
-        <?php endif; ?>
-        
-        <?php if(isset($_SESSION['error'])): ?>
-            <div class="alert alert-danger">
-                <?php 
-                    echo $_SESSION['error']; 
-                    unset($_SESSION['error']);
-                ?>
-            </div>
-        <?php endif; ?>
-       
-        <div class="appointment-section">
-    <h2>Pending Appointments</h2>
-    <?php if(empty($pendingAppointments)): ?>
-        <p>No rejected appointments found.</p>
-    <?php else: ?>
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Patient Name</th>
-                        <th>Date</th>
-                        <th>Start Time</th>
-                        <th>End Time</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($pendingAppointments as $appointment): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($appointment['id']); ?></td>
-                            <td>
-    <a href="patient_profiled2.php?id=<?php echo urlencode($appointment['user_id']); ?>" 
-       style="text-decoration: none; color: #007bff; font-weight: bold;">
-       <?php echo htmlspecialchars($appointment['patient_name'] ?? 'N/A'); ?>
-    </a>
-</td>
-
-                            <td><?php echo htmlspecialchars($appointment['appointment_date'] ?? 'N/A'); ?></td>
-                            <td><?php echo htmlspecialchars($appointment['appointment_time'] ?? 'N/A'); ?></td>
-                            <td><?php echo htmlspecialchars($appointment['appointment_end'] ?? 'N/A'); ?></td>
-                            <td class="status-pending"><?php echo htmlspecialchars($appointment['status']); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+    <div class="dashboard-container">
+        <div class="page-header">
+            <h1><i class="ri-calendar-check-line me-2"></i>Appointment Management</h1>
         </div>
-    <?php endif; ?>
-</div>
-<br>
-<br>
-        <!-- Approved Appointments Section -->
+
+        <!-- Pending Appointments Section -->
         <div class="appointment-section">
-            <h2>Approved Appointments</h2>
-            <?php if(empty($approvedAppointments)): ?>
-                <p>No approved appointments found.</p>
+            <h2><i class="ri-time-line me-2"></i>Pending Appointments</h2>
+            <?php if(empty($pendingAppointments)): ?>
+                <div class="empty-state">
+                    <i class="ri-inbox-line" style="font-size: 3rem; color: #6c757d;"></i>
+                    <p class="mt-3">No pending appointments at the moment</p>
+                </div>
             <?php else: ?>
                 <div class="table-responsive">
-                    <table>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Patient Name</th>
+                                <th>Date</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach($pendingAppointments as $appointment): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($appointment['id']); ?></td>
+                                    <td>
+                                        <a href="patient_profiled2.php?id=<?php echo urlencode($appointment['user_id']); ?>" 
+                                           class="patient-link">
+                                            <?php echo htmlspecialchars($appointment['patient_name'] ?? 'N/A'); ?>
+                                        </a>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($appointment['appointment_date'] ?? 'N/A'); ?></td>
+                                    <td><?php echo htmlspecialchars($appointment['appointment_time'] ?? 'N/A'); ?></td>
+                                    <td><?php echo htmlspecialchars($appointment['appointment_end'] ?? 'N/A'); ?></td>
+                                    <td>
+                                        <span class="status-chip status-pending">
+                                            <?php echo htmlspecialchars($appointment['status']); ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Approved Appointments Section -->
+        <div class="appointment-section">
+            <h2><i class="ri-check-double-line me-2"></i>Approved Appointments</h2>
+            <?php if(empty($approvedAppointments)): ?>
+                <div class="empty-state">
+                    <i class="ri-checkbox-circle-line" style="font-size: 3rem; color: #6c757d;"></i>
+                    <p class="mt-3">No approved appointments found</p>
+                </div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -232,16 +255,19 @@ $conn->close();
                                 <tr>
                                     <td><?php echo htmlspecialchars($appointment['id']); ?></td>
                                     <td>
-    <a href="patient_profiled2.php?id=<?php echo urlencode($appointment['user_id']); ?>" 
-       style="text-decoration: none; color: #007bff; font-weight: bold;">
-       <?php echo htmlspecialchars($appointment['patient_name'] ?? 'N/A'); ?>
-    </a>
-</td>
-
+                                        <a href="patient_profiled2.php?id=<?php echo urlencode($appointment['user_id']); ?>" 
+                                           class="patient-link">
+                                            <?php echo htmlspecialchars($appointment['patient_name'] ?? 'N/A'); ?>
+                                        </a>
+                                    </td>
                                     <td><?php echo htmlspecialchars($appointment['appointment_date'] ?? 'N/A'); ?></td>
                                     <td><?php echo htmlspecialchars($appointment['appointment_time'] ?? 'N/A'); ?></td>
                                     <td><?php echo htmlspecialchars($appointment['appointment_end'] ?? 'N/A'); ?></td>
-                                    <td class="status-approved"><?php echo htmlspecialchars($appointment['status']); ?></td>
+                                    <td>
+                                        <span class="status-chip status-approved">
+                                            <?php echo htmlspecialchars($appointment['status']); ?>
+                                        </span>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -249,56 +275,57 @@ $conn->close();
                 </div>
             <?php endif; ?>
         </div>
-        <br>
-        <br>
-        <!-- Rejected Appointments Section -->
-        <!-- Rejected Appointments Section -->
-<div class="appointment-section">
-    <h2>Rejected Appointments</h2>
-    <?php if(empty($rejectedAppointments)): ?>
-        <p>No rejected appointments found.</p>
-    <?php else: ?>
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Patient Name</th>
-                        <th>Date</th>
-                        <th>Start Time</th>
-                        <th>End Time</th>
-                        <th>Rejection Reason</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($rejectedAppointments as $appointment): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($appointment['id']); ?></td>
-                            <td>
-    <a href="patient_profiled2.php?id=<?php echo urlencode($appointment['user_id']); ?>" 
-       style="text-decoration: none; color: #007bff; font-weight: bold;">
-       <?php echo htmlspecialchars($appointment['patient_name'] ?? 'N/A'); ?>
-    </a>
-</td>
 
-                            <td><?php echo htmlspecialchars($appointment['appointment_date'] ?? 'N/A'); ?></td>
-                            <td><?php echo htmlspecialchars($appointment['appointment_time'] ?? 'N/A'); ?></td>
-                            <td><?php echo htmlspecialchars($appointment['appointment_end'] ?? 'N/A'); ?></td>
-                            <td><?php echo htmlspecialchars($appointment['rejection_reason'] ?? 'No reason provided'); ?></td>
-                            <td class="status-rejected"><?php echo htmlspecialchars($appointment['status']); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+        <!-- Rejected Appointments Section -->
+        <div class="appointment-section">
+            <h2><i class="ri-close-circle-line me-2"></i>Rejected Appointments</h2>
+            <?php if(empty($rejectedAppointments)): ?>
+                <div class="empty-state">
+                    <i class="ri-forbid-line" style="font-size: 3rem; color: #6c757d;"></i>
+                    <p class="mt-3">No rejected appointments found</p>
+                </div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Patient Name</th>
+                                <th>Date</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Rejection Reason</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach($rejectedAppointments as $appointment): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($appointment['id']); ?></td>
+                                    <td>
+                                        <a href="patient_profiled2.php?id=<?php echo urlencode($appointment['user_id']); ?>" 
+                                           class="patient-link">
+                                            <?php echo htmlspecialchars($appointment['patient_name'] ?? 'N/A'); ?>
+                                        </a>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($appointment['appointment_date'] ?? 'N/A'); ?></td>
+                                    <td><?php echo htmlspecialchars($appointment['appointment_time'] ?? 'N/A'); ?></td>
+                                    <td><?php echo htmlspecialchars($appointment['appointment_end'] ?? 'N/A'); ?></td>
+                                    <td><?php echo htmlspecialchars($appointment['rejection_reason'] ?? 'No reason provided'); ?></td>
+                                    <td>
+                                        <span class="status-chip status-rejected">
+                                            <?php echo htmlspecialchars($appointment['status']); ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
         </div>
-    <?php endif; ?>
-</div>
-<br>
-<br>
-
-        
-      
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

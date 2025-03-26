@@ -432,11 +432,7 @@ if ($paymentMethodResult) $conn->query($paymentMethodSql);
                 <div class="chart-header">
                     <div class="chart-title">Revenue Trend</div>
                     <div class="chart-controls">
-                        <select id="revenue-period">
-                            <option value="daily" selected>Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                        </select>
+                        
                     </div>
                 </div>
                 <div class="chart-container">
