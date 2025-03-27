@@ -1,7 +1,8 @@
 <?php
 session_start();
 require 'db_connection.php'; // Include your database connection file
-include'patientheader2.php';
+include 'patientheader2.php';
+require 'delete_passed_appointments.php';
 
 if (!isset($_SESSION['id'])) {
     die("Unauthorized access");
@@ -234,7 +235,11 @@ $result = $stmt->get_result();
         background-color: transparent;
         cursor: pointer;
     }
-    
+    .status-badge.status-expired {
+    color: #6c757d; /* Grey color for expired */
+    background-color: transparent;
+}
+
     /* Date with icon */
     .date-with-icon {
         display: flex;
@@ -328,29 +333,28 @@ $result = $stmt->get_result();
                                     </div>
                                 </td>
                                 <td>
-                                <?php 
-    $appointment_date = strtotime($row['appointment_date']);
-    $yesterday = strtotime('-1 day');
-    
-    if ($appointment_date <= $yesterday) : ?>
-        <span class="status-badge status-rejected">
-            <i class="fas fa-exclamation-circle"></i> Expired
-        </span>
-    <?php elseif ($row['status'] == 'approved') : ?>
+    <?php if ($row['status'] == 'approved') : ?>
         <span class="status-badge status-approved">
             <i class="fas fa-check-circle"></i> Approved
         </span>
-                                    <?php elseif ($row['status'] == 'pending') : ?>
-                                        <span class="status-badge status-pending">
-                                            <i class="fas fa-clock"></i> Pending
-                                        </span>
-                                    <?php elseif ($row['status'] == 'rejected') : ?>
-                                        <span class="status-badge status-rejected" 
-                                              data-bs-toggle="modal" 
-                                              data-bs-target="#rejectionModal<?php echo $row['id']; ?>" 
-                                              style="text-decoration: none; cursor: pointer;">
-                                            <i class="fas fa-times-circle"></i> Rejected (View Reason)
-                                        </span>
+    <?php elseif ($row['status'] == 'pending') : ?>
+        <span class="status-badge status-pending">
+            <i class="fas fa-clock"></i> Pending
+        </span>
+    <?php elseif ($row['status'] == 'rejected') : ?>
+        <span class="status-badge status-rejected" 
+              data-bs-toggle="modal" 
+              data-bs-target="#rejectionModal<?php echo $row['id']; ?>" 
+              style="text-decoration: none; cursor: pointer;">
+            <i class="fas fa-times-circle"></i> Rejected (View Reason)
+        </span>
+    <?php elseif ($row['status'] == 'expired') : ?>
+        <span class="status-badge status-expired" style="color: #6c757d;">
+            <i class="fas fa-hourglass-end"></i> Time Up
+        </span>
+    <?php endif; ?>
+</td>
+
                                         
                                         <!-- Rejection Reason Modal -->
                                         <div class="modal fade rejection-reason-modal" id="rejectionModal<?php echo $row['id']; ?>" tabindex="-1" aria-labelledby="rejectionModalLabel" aria-hidden="true">
@@ -381,7 +385,7 @@ $result = $stmt->get_result();
                                                 </div>
                                             </div>
                                         </div>
-                                    <?php endif; ?>
+                                
                                 </td>
                                 <td>
                                     <div class="long-text" data-bs-toggle="tooltip" data-bs-placement="top" 

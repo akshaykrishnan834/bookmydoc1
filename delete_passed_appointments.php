@@ -1,41 +1,46 @@
 <?php
-session_start();
-// Database connection details
 $servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "bookmydoc";
+$username = "root"; // Change as needed
+$password = ""; // Change as needed
+$dbname = "bookmydoc"; // Your database name
 
-// Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Delete appointments that have passed
-$sql = "DELETE FROM appointment_requests 
-        WHERE appointment_date < CURDATE() 
-        OR (appointment_date = CURDATE() AND 
-            EXISTS (
-                SELECT 1 FROM doctor_availability da 
-                WHERE da.id = appointment_requests.slot_id 
-                AND CONCAT(appointment_date, ' ', da.end_time) < NOW()
-            )
-        )";
+date_default_timezone_set('Asia/Kolkata'); // Set timezone to Kolkata
 
-if ($conn->query($sql) === TRUE) {
-    echo "<script>
-        alert('Passed appointments have been deleted successfully.');
-        window.location.href = 'manageappointments.php';
-    </script>";
-} else {
-    echo "<script>
-        alert('Error deleting passed appointments: " . $conn->error . "');
-        window.location.href = 'manageappointments.php';
-    </script>";
+function updatePastAppointmentsStatus($conn) {
+    // Get the current date and time
+    $currentDateTime = date('Y-m-d H:i:s');
+    
+    // SQL query to update past appointments status to 'expired' only if payment_status is 'pending'
+    $sql = "UPDATE appointment_requests ar
+            JOIN doctor_availability da ON ar.slot_id = da.id
+            SET ar.status = 'expired'
+            WHERE CONCAT(ar.appointment_date, ' ', da.start_time) < ? 
+            AND ar.status NOT IN ('expired', 'rejected')
+            AND ar.payment_status = 'pending'";
+    
+    // Prepare statement
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param("s", $currentDateTime);
+        
+        // Execute the statement
+        if ($stmt->execute()) {
+            echo "";
+        } else {
+            echo "Error updating records: " . $stmt->error;
+        }
+        
+        // Close statement
+        $stmt->close();
+    } else {
+        echo "Error preparing statement: " . $conn->error;
+    }
 }
 
-$conn->close();
-?> 
+// Call the function
+updatePastAppointmentsStatus($conn);
+?>

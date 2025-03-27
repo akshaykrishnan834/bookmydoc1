@@ -312,13 +312,6 @@ if (isset($_GET['success']) && $_GET['success'] == 'true') {
             </div>
         </div>
 
-        <!-- Add Print Button -->
-        <div style="margin-bottom: 30px; text-align: right;">
-            <button id="print-button" class="pay-button" style="background-color: #007bff; width: auto; padding: 10px 20px;">
-                Print Payment Details
-            </button>
-        </div>
-
         <?php if($payment_made): ?>
             <div class="payment-methods" style="text-align: center;">
                 <div style="background-color: #d4edda; color: #155724; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
@@ -326,6 +319,13 @@ if (isset($_GET['success']) && $_GET['success'] == 'true') {
                     <p>Your payment has been successfully processed.</p>
                     <p>Transaction ID: <?php echo htmlspecialchars($payment_data['transaction_id']); ?></p>
                     <p>Payment Date: <?php echo date('Y-m-d h:i A', strtotime($payment_data['payment_date'])); ?></p>
+                    
+                    <!-- Print Button - Only shown when payment is made -->
+                    <div style="margin-top: 20px;">
+                        <button id="print-button" class="pay-button" style="background-color: #007bff; width: auto; padding: 10px 20px;">
+                            Print Payment Receipt
+                        </button>
+                    </div>
                 </div>
             </div>
         <?php else: ?>
@@ -432,7 +432,6 @@ if (isset($_GET['success']) && $_GET['success'] == 'true') {
                 var content = `
                     <html>
                     <head>
-                       
                         <title>Payment Receipt - <?php echo $formatted_apt_id; ?></title>
                         <style>
                             body {
