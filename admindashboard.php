@@ -57,9 +57,16 @@ $status_chart_data = json_encode($status_data);
 <body class="bg-light">
     <div class="container-fluid py-4">
         <div class="row mb-4">
-            <div class="col-12">
-                <h2 class="admin-title">Dashboard Overview</h2>
-                <p class="text-muted">Welcome back, Admin!</p>
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="admin-title">Dashboard Overview</h2>
+                    <p class="text-muted">Welcome back, Admin!</p>
+                </div>
+                <div>
+                    <a href="print_dashboard.php" class="btn btn-primary print-btn" target="_blank">
+                        <i class="fas fa-print me-2"></i>Print Dashboard
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -110,8 +117,6 @@ $status_chart_data = json_encode($status_data);
                 </div>
             </div>
         </div>
-
-       
 
         <!-- Analytics Section - Charts -->
         <div class="row">
@@ -212,6 +217,23 @@ $status_chart_data = json_encode($status_data);
     margin-bottom: 0.75rem;
     font-size: 2.2rem;
     letter-spacing: -0.5px;
+}
+
+/* Print Button */
+.print-btn {
+    background: linear-gradient(135deg, #3949ab 0%, #1a237e 100%);
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(26, 35, 126, 0.2);
+    transition: all 0.3s ease;
+}
+
+.print-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(26, 35, 126, 0.3);
+    background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
 }
 
 /* Stat Cards */
@@ -556,6 +578,7 @@ $status_chart_data = json_encode($status_data);
                 }
             });
         });
+        
     </script>
 </body>
 </html>

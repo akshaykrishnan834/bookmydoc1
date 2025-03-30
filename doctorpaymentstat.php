@@ -5,34 +5,85 @@ include('doctorheader.php');
 
 // Database connection
 $servername = "localhost";
-$username = "root";  // Your database username
-$password = "";  // Your database password
-$dbname = "bookmydoc"; // Your database name
+$username = "root";
+$password = "";
+$dbname = "bookmydoc";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
-// Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-$doctor_id = $_SESSION['id']; // Assuming doctor ID is stored in session
+$doctor_id = $_SESSION['id'];
 $total_earnings = 0;
 
-// Fetch payments with patient name
+// Get doctor's name and details
+$doctor_sql = "SELECT name, specialization, email, phone FROM doctorreg WHERE id = ?";
+$doctor_stmt = $conn->prepare($doctor_sql);
+$doctor_stmt->bind_param("i", $doctor_id);
+$doctor_stmt->execute();
+$doctor_result = $doctor_stmt->get_result();
+$doctor_data = ($doctor_result->num_rows > 0) ? $doctor_result->fetch_assoc() : 
+    ["name" => "Doctor", "specialization" => "Specialist", "email" => "", "phone" => ""];
+
+// Get payment data
 $sql = "
-    SELECT p.amount, p.payment_date, ar.id, pr.name AS patient_name
-    FROM payments p
+    SELECT 
+    p.amount,
+    p.payment_date,
+    ar.id,
+    ar.appointment_date,
+    pr.name AS patient_name,
+    da.start_time,
+    da.end_time
+FROM 
+    payments p
     INNER JOIN appointment_requests ar ON p.appointment_id = ar.id
     INNER JOIN patientreg pr ON ar.user_id = pr.id
-    WHERE ar.doctor_id = ?
-    ORDER BY p.payment_date DESC
+    INNER JOIN doctor_availability da ON ar.doctor_id = da.doctor_id 
+WHERE 
+    ar.doctor_id = ?
+ORDER BY 
+    p.payment_date DESC
 ";
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $doctor_id);
 $stmt->execute();
 $result = $stmt->get_result();
+
+// Calculate monthly earnings
+$monthly_earnings = [];
+$current_month = date('M Y');
+$monthly_transactions = [];
+
+// Calculate earnings by month
+$result_copy = $result->data_seek(0);
+while ($row = $result->fetch_assoc()) {
+    $payment_date = new DateTime($row['payment_date']);
+    $month_key = $payment_date->format('M Y');
+    
+    if (!isset($monthly_earnings[$month_key])) {
+        $monthly_earnings[$month_key] = 0;
+        $monthly_transactions[$month_key] = 0;
+    }
+    
+    $monthly_earnings[$month_key] += $row['amount'];
+    $monthly_transactions[$month_key]++;
+}
+
+// Calculate total earnings
+$result->data_seek(0);
+$total_earnings = 0;
+$transaction_count = 0;
+while ($row = $result->fetch_assoc()) {
+    $total_earnings += $row['amount'];
+    $transaction_count++;
+}
+
+// Calculate average earnings per transaction
+$avg_transaction = ($transaction_count > 0) ? $total_earnings / $transaction_count : 0;
 ?>
 
 <!DOCTYPE html>
@@ -163,10 +214,175 @@ $result = $stmt->get_result();
             color: #4e73df;
             margin-left: 10px;
         }
+        
+        /* Report styles - only visible when printing */
+        .print-report {
+            display: none;
+        }
+        
+        /* Print-specific styles */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .dashboard-container {
+                box-shadow: none;
+                margin: 0;
+                width: 100%;
+                border-radius: 0;
+            }
+            .dashboard-header, .table thead th, .dashboard-body, 
+            .table-responsive, .earnings-summary, .earnings-card {
+                box-shadow: none;
+                border-radius: 0;
+            }
+            .dashboard-header {
+                background: #4e73df !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .table thead th {
+                background-color: #4e73df !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                color: white !important;
+            }
+            .badge-success {
+                background-color: #1cc88a !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            body {
+                background-color: white !important;
+            }
+            
+            /* Show print report */
+            .print-report {
+                display: block !important;
+                page-break-before: always;
+            }
+            
+            /* Report styling */
+            .report-header {
+                text-align: center;
+                margin-bottom: 20px;
+                border-bottom: 2px solid #333;
+                padding-bottom: 20px;
+            }
+            .report-header h1 {
+                margin: 0;
+                font-size: 24px;
+                font-weight: bold;
+            }
+            .report-header p {
+                margin: 5px 0 0 0;
+                font-size: 14px;
+            }
+            .report-doctor-info {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 30px;
+            }
+            .report-doctor-info div {
+                width: 50%;
+            }
+            .report-doctor-info h2 {
+                font-size: 16px;
+                font-weight: bold;
+                margin-bottom: 10px;
+                text-transform: uppercase;
+            }
+            .report-doctor-info p {
+                margin: 5px 0;
+                font-size: 14px;
+            }
+            .report-summary {
+                margin-bottom: 30px;
+            }
+            .report-summary h2 {
+                font-size: 16px;
+                font-weight: bold;
+                margin-bottom: 10px;
+                text-transform: uppercase;
+            }
+            .report-summary-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .report-summary-table th,
+            .report-summary-table td {
+                border: 1px solid #ddd;
+                padding: 10px;
+                text-align: left;
+            }
+            .report-summary-table th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+            .report-monthly-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 30px;
+            }
+            .report-monthly-table th,
+            .report-monthly-table td {
+                border: 1px solid #ddd;
+                padding: 10px;
+                text-align: left;
+            }
+            .report-monthly-table th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+            .report-transactions {
+                margin-bottom: 30px;
+            }
+            .report-transactions h2 {
+                font-size: 16px;
+                font-weight: bold;
+                margin-bottom: 10px;
+                text-transform: uppercase;
+            }
+            .report-transactions-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .report-transactions-table th,
+            .report-transactions-table td {
+                border: 1px solid #ddd;
+                padding: 10px;
+                text-align: left;
+            }
+            .report-transactions-table th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+            .report-footer {
+                margin-top: 50px;
+                text-align: center;
+                font-size: 12px;
+                color: #666;
+            }
+            .report-footer p {
+                margin: 5px 0;
+            }
+            .signature-line {
+                margin-top: 80px;
+                border-top: 1px solid #333;
+                width: 250px;
+                margin-left: auto;
+                margin-right: auto;
+                text-align: center;
+                padding-top: 10px;
+            }
+        }
+        
     </style>
 </head>
 <body>
-
 <div class="dashboard-container">
     <div class="dashboard-header">
         <h1 class="dashboard-title">Payment Statistics</h1>
@@ -174,22 +390,20 @@ $result = $stmt->get_result();
     </div>
     
     <div class="dashboard-body">
+        <div class="no-print mb-3 text-end">
+            <button onclick="window.print()" class="btn btn-primary">
+                <i class="fas fa-file-pdf me-2"></i>Generate Formal Report
+            </button>
+        </div>
+
         <div class="earnings-summary">
             <div class="earnings-card">
                 <h3><i class="fas fa-wallet me-2"></i>Total Earnings</h3>
-                <div class="amount">₹<?php 
-                    // Calculate total earnings
-                    $total_earnings = 0;
-                    $result_copy = $result;
-                    while ($row = $result_copy->fetch_assoc()) {
-                        $total_earnings += $row['amount'];
-                    }
-                    echo number_format($total_earnings, 2); 
-                ?></div>
+                <div class="amount">₹<?php echo number_format($total_earnings, 2); ?></div>
             </div>
             <div class="earnings-card">
                 <h3><i class="fas fa-calendar-check me-2"></i>Transactions</h3>
-                <div class="amount"><?php echo $result->num_rows; ?></div>
+                <div class="amount"><?php echo $transaction_count; ?></div>
             </div>
         </div>
         
@@ -205,13 +419,13 @@ $result = $stmt->get_result();
                 </thead>
                 <tbody>
                     <?php 
-                    $result->data_seek(0); // Reset pointer to beginning of result set
+                    $result->data_seek(0);
                     if ($result->num_rows > 0) {
                         while ($row = $result->fetch_assoc()): 
                     ?>
                         <tr>
                             <td>#<?php echo $row['id']; ?></td>
-                            <td class="patient-name"><?php echo $row['patient_name']; ?></td>
+                            <td class="patient-name"><?php echo htmlspecialchars($row['patient_name']); ?></td>
                             <td><span class="badge badge-success">₹<?php echo number_format($row['amount'], 2); ?></span></td>
                             <td class="transaction-date"><?php echo date("d M Y, h:i A", strtotime($row['payment_date'])); ?></td>
                         </tr>
@@ -234,6 +448,126 @@ $result = $stmt->get_result();
     <div class="total-footer">
         <span class="total-label">Total Earnings:</span>
         <span class="total-amount">₹<?php echo number_format($total_earnings, 2); ?></span>
+        <div class="print-only mt-2">
+            <small>Generated on: <?php echo date("d M Y, h:i A"); ?></small>
+        </div>
+    </div>
+    
+    <!-- FORMAL REPORT - Only visible when printing -->
+    <div class="print-report">
+        <div class="report-header">
+            <h1>EARNINGS REPORT</h1>
+            <p>BookMyDoc Healthcare Services</p>
+            <p>Report Generated: <?php echo date("d M Y, h:i A"); ?></p>
+        </div>
+        
+        <div class="report-doctor-info">
+            <div>
+                <h2>Doctor Information</h2>
+                <p><strong>Name:</strong> Dr. <?php echo htmlspecialchars($doctor_data['name']); ?></p>
+                <p><strong>Specialization:</strong> <?php echo htmlspecialchars($doctor_data['specialization']); ?></p>
+                <p><strong>Email:</strong> <?php echo htmlspecialchars($doctor_data['email']); ?></p>
+                <p><strong>Phone:</strong> <?php echo htmlspecialchars($doctor_data['phone']); ?></p>
+            </div>
+            <div>
+                <h2>Report Summary</h2>
+                <p><strong>Total Earnings:</strong> ₹<?php echo number_format($total_earnings, 2); ?></p>
+                <p><strong>Total Transactions:</strong> <?php echo $transaction_count; ?></p>
+                <p><strong>Average Transaction Value:</strong> ₹<?php echo number_format($avg_transaction, 2); ?></p>
+                <p><strong>Report Period:</strong> All Time</p>
+            </div>
+        </div>
+        
+        <div class="report-summary">
+            <h2>Financial Summary</h2>
+            <table class="report-summary-table">
+                <tr>
+                    <th width="70%">Description</th>
+                    <th width="30%">Amount (₹)</th>
+                </tr>
+                <tr>
+                    <td>Total Gross Earnings</td>
+                    <td><?php echo number_format($total_earnings, 2); ?></td>
+                </tr>
+                <tr>
+                    <td>Average Earnings Per Transaction</td>
+                    <td><?php echo number_format($avg_transaction, 2); ?></td>
+                </tr>
+                <tr>
+                    <td>Current Month Earnings (<?php echo date('M Y'); ?>)</td>
+                    <td><?php echo number_format($monthly_earnings[$current_month] ?? 0, 2); ?></td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="report-monthly">
+            <h2>Monthly Earnings Breakdown</h2>
+            <table class="report-monthly-table">
+                <tr>
+                    <th width="40%">Month</th>
+                    <th width="30%">Transactions</th>
+                    <th width="30%">Earnings (₹)</th>
+                </tr>
+                <?php 
+                krsort($monthly_earnings); // Sort by month (newest first)
+                foreach ($monthly_earnings as $month => $amount): 
+                ?>
+                <tr>
+                    <td><?php echo $month; ?></td>
+                    <td><?php echo $monthly_transactions[$month]; ?></td>
+                    <td><?php echo number_format($amount, 2); ?></td>
+                </tr>
+                <?php endforeach; ?>
+                <tr>
+                    <th>Total</th>
+                    <th><?php echo $transaction_count; ?></th>
+                    <th><?php echo number_format($total_earnings, 2); ?></th>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="report-transactions">
+            <h2>Transaction History</h2>
+            <table class="report-transactions-table">
+                <tr>
+                    <th>Appointment ID</th>
+                    <th>Patient Name</th>
+                    <th>Appointment Date</th>
+                    <th>Appointment Time</th>s
+                    <th>Payment Date</th>
+                    <th>Amount (₹)</th>
+                </tr>
+                <?php 
+                $result->data_seek(0);
+                if ($result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()): 
+                ?>
+                <tr>
+                <td>#<?php echo $row['id']; ?></td>
+<td><?php echo htmlspecialchars($row['patient_name']); ?></td>
+<td><?php echo date("d M Y", strtotime($row['appointment_date'])); ?></td>
+<td><?php echo $row['start_time'] . ' - ' . $row['end_time']; ?></td>
+<td><?php echo date("d M Y", strtotime($row['payment_date'])); ?></td>
+<td><?php echo number_format($row['amount'], 2); ?></td>
+                </tr>
+                <?php 
+                    endwhile; 
+                } else { 
+                ?>
+                <tr>
+                    <td colspan="5" style="text-align: center;">No transactions found</td>
+                </tr>
+                <?php } ?>
+            </table>
+        </div>
+        
+        <div class="report-footer">
+            <div class="signature-line">
+                Doctor's Signature
+            </div>
+            <p>This is a computer-generated report and does not require a physical signature.</p>
+            <p>BookMyDoc Healthcare Services | <?php echo date("Y"); ?> &copy; All Rights Reserved</p>
+        </div>
     </div>
 </div>
 
@@ -242,6 +576,7 @@ $result = $stmt->get_result();
 </html>
 
 <?php 
-$stmt->close(); 
+$stmt->close();
+if (isset($doctor_stmt)) $doctor_stmt->close();
 $conn->close(); 
 ?>
