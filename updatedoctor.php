@@ -178,6 +178,10 @@
                     <div class="icon"><i class="fas fa-map-marker-alt"></i></div>
                     <div class="text">Update Address</div>
                 </a>
+                <a href="update_fees.php" class="btn-option profile">
+    <div class="icon"><i class="fas fa-rupee-sign"></i></div>
+    <div class="text">Update Fees</div>
+</a>
                 
                 <div class="divider"></div>
                 
