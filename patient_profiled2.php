@@ -32,6 +32,16 @@ $stmt_medical->execute();
 $medical_records = $stmt_medical->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt_medical->close();
 
+// Fetch consultation notes
+$sql_notes = "SELECT consultation_notes, appointment_date FROM appointment_requests
+              WHERE user_id = ? AND consultation_notes IS NOT NULL 
+              ORDER BY appointment_date DESC";
+$stmt_notes = $conn->prepare($sql_notes);
+$stmt_notes->bind_param("i", $patient_id);
+$stmt_notes->execute();
+$consultation_notes = $stmt_notes->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt_notes->close();
+
 // Handle file upload
 $message = "";
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -411,6 +421,34 @@ $conn->close();
             </div>
         </div>
     </div>
+
+    <h4 class="section-title"><i class="fas fa-notes-medical"></i> Consultation History</h4>
+    
+    <?php if (!empty($consultation_notes)): ?>
+        <div class="table-responsive">
+            <table class="table table-bordered table-medical">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-calendar"></i> Appointment Date</th>
+                        <th><i class="fas fa-file-medical-alt"></i> Consultation Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($consultation_notes as $note): ?>
+                        <tr>
+                            <td><?= date("M d, Y", strtotime($note['appointment_date'])); ?></td>
+                            <td><?= nl2br(htmlspecialchars($note['consultation_notes'])); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php else: ?>
+        <div class="empty-records">
+            <i class="fas fa-clipboard-list d-block"></i>
+            <p>No consultation notes available for this patient.</p>
+        </div>
+    <?php endif; ?>
 
     <h4 class="section-title"><i class="fas fa-file-medical"></i> Medical Records</h4>
 

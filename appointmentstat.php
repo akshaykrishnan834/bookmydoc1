@@ -11,7 +11,7 @@ if (!isset($_SESSION['id'])) {
 $patient_id = $_SESSION['id'];
 
 $sql = "SELECT ar.id, ar.appointment_date, ar.status, ar.payment_status, ar.patient_condition, 
-               d.name AS doctor_name, s.start_time, s.end_time, ar.rejection_reason
+               d.name AS doctor_name, s.start_time, s.end_time, ar.rejection_reason, ar.consultation_notes
         FROM appointment_requests ar
         JOIN doctorreg d ON ar.doctor_id = d.id
         JOIN doctor_availability s ON ar.slot_id = s.id
@@ -288,6 +288,28 @@ $result = $stmt->get_result();
         border-radius: 5px;
         border-left: 4px solid #F44336;
     }
+    
+    .consultation-content {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        border-left: 4px solid #17a2b8;
+    }
+    
+    .modal-header {
+        background: linear-gradient(to right, #17a2b8, #20c997);
+        color: white;
+    }
+    
+    .btn-info {
+        background-color: #17a2b8;
+        color: white;
+    }
+    
+    .btn-info:hover {
+        background-color: #138496;
+        color: white;
+    }
     </style>
 </head>
 <body>
@@ -307,9 +329,11 @@ $result = $stmt->get_result();
                             <tr>
                                 <th>ID</th>
                                 <th>Doctor</th>
-                                <th>Schedule</th>
+                                <th>Date</th>
+                                <th>Time</th>
                                 <th>Status</th>
                                 <th>Condition</th>
+                                <th>Consultation Notes</th>
                                 <th>Payment</th>
                                 <th>Action</th>
                             </tr>
@@ -320,17 +344,17 @@ $result = $stmt->get_result();
                                 <td>#<?php echo $row['id']; ?></td>
                                 <td class="doctor-name"><?php echo $row['doctor_name']; ?></td>
                                 <td>
-                                    <div class="date-time">
-                                        <span class="appointment-date">
-                                            <i class="far fa-calendar-alt me-1"></i>
-                                            <?php echo date('M d, Y', strtotime($row['appointment_date'])); ?>
-                                        </span>
-                                        <span class="time-slot">
-                                            <i class="far fa-clock me-1"></i>
-                                            <?php echo date('h:i A', strtotime($row['start_time'])) . ' - ' . 
+                                    <span class="appointment-date">
+                                        <i class="far fa-calendar-alt me-1"></i>
+                                        <?php echo date('M d, Y', strtotime($row['appointment_date'])); ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="time-slot">
+                                        <i class="far fa-clock me-1"></i>
+                                        <?php echo date('h:i A', strtotime($row['start_time'])) . ' - ' . 
                                                         date('h:i A', strtotime($row['end_time'])); ?>
-                                        </span>
-                                    </div>
+                                    </span>
                                 </td>
                                 <td>
     <?php if ($row['status'] == 'approved') : ?>
@@ -392,6 +416,47 @@ $result = $stmt->get_result();
                                          title="<?php echo htmlspecialchars($row['patient_condition']); ?>">
                                         <?php echo htmlspecialchars($row['patient_condition']); ?>
                                     </div>
+                                </td>
+                                <td>
+                                    <?php if (!empty($row['consultation_notes'])) : ?>
+                                        <button class="btn btn-info btn-sm" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#consultationModal<?php echo $row['id']; ?>">
+                                            <i class="fas fa-notes-medical me-1"></i> View Notes
+                                        </button>
+                                        
+                                        <!-- Consultation Notes Modal -->
+                                        <div class="modal fade" id="consultationModal<?php echo $row['id']; ?>" tabindex="-1" 
+                                             aria-labelledby="consultationModalLabel<?php echo $row['id']; ?>" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="consultationModalLabel<?php echo $row['id']; ?>">
+                                                            <i class="fas fa-notes-medical me-2"></i>
+                                                            Consultation Notes
+                                                        </h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <h6>Appointment #<?php echo $row['id']; ?> with Dr. <?php echo $row['doctor_name']; ?></h6>
+                                                        <p><strong>Date:</strong> <?php echo date('M d, Y', strtotime($row['appointment_date'])); ?></p>
+                                                        <p><strong>Time:</strong> <?php echo date('h:i A', strtotime($row['start_time'])) . ' - ' . 
+                                                                date('h:i A', strtotime($row['end_time'])); ?></p>
+                                                        
+                                                        <div class="consultation-content mt-3">
+                                                            <h6><strong>Doctor's Notes:</strong></h6>
+                                                            <p><?php echo nl2br(htmlspecialchars($row['consultation_notes'])); ?></p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php else : ?>
+                                        <span class="text-muted">No notes available</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php if ($row['status'] == 'approved') : ?>

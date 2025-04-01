@@ -9,7 +9,7 @@ $doctor_id = $_SESSION['id']; // Assuming the doctor is already logged in
 // Function to get appointments by status with patient name and filter by doctor_id
 function getAppointmentsByStatus($conn, $status, $doctor_id) {
     $sql = "SELECT a.*, p.name as patient_name, s.start_time as appointment_time, 
-                   s.end_time as appointment_end, a.rejection_reason
+                   s.end_time as appointment_end, a.rejection_reason, a.consultation_notes
             FROM appointment_requests a
             LEFT JOIN patientreg p ON a.user_id = p.id
             LEFT JOIN doctor_availability s ON a.slot_id = s.id
@@ -174,6 +174,20 @@ $conn->close();
                 text-align: center;
             }
         }
+
+        .badge {
+            font-size: 0.8rem;
+            padding: 0.4em 0.8em;
+        }
+        
+        .modal-dialog {
+            max-width: 800px;
+        }
+        
+        .modal textarea {
+            resize: vertical;
+            min-height: 150px;
+        }
     </style>
 </head>
 <body>
@@ -248,6 +262,8 @@ $conn->close();
                                 <th>Start Time</th>
                                 <th>End Time</th>
                                 <th>Status</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -268,7 +284,49 @@ $conn->close();
                                             <?php echo htmlspecialchars($appointment['status']); ?>
                                         </span>
                                     </td>
+                                    <td>
+                                        <?php if(!empty($appointment['consultation_notes'])): ?>
+                                            <span class="badge bg-success">Notes Added</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary">No Notes</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#notesModal<?php echo $appointment['id']; ?>">
+                                            <?php echo empty($appointment['consultation_notes']) ? 'Add Notes' : 'Edit Notes'; ?>
+                                        </button>
+                                    </td>
                                 </tr>
+                                
+                                <!-- Modal for each appointment -->
+                                <div class="modal fade" id="notesModal<?php echo $appointment['id']; ?>" tabindex="-1">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Consultation Notes - <?php echo htmlspecialchars($appointment['patient_name']); ?></h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <form action="save_notes.php" method="POST">
+                                                <div class="modal-body">
+                                                    <input type="hidden" name="appointment_id" value="<?php echo $appointment['id']; ?>">
+                                                    <div class="mb-3">
+                                                        <label for="notes<?php echo $appointment['id']; ?>" class="form-label">Consultation Notes</label>
+                                                        <textarea class="form-control" 
+                                                                  id="notes<?php echo $appointment['id']; ?>" 
+                                                                  name="consultation_notes" 
+                                                                  rows="5"><?php echo htmlspecialchars($appointment['consultation_notes'] ?? ''); ?></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                    <button type="submit" class="btn btn-primary">Save Notes</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
