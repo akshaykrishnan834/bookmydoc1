@@ -29,16 +29,16 @@ $total_pages = ceil($total_records / $records_per_page);
 $query = "SELECT * FROM patientreg $where_clause LIMIT $offset, $records_per_page";
 $result = mysqli_query($conn, $query);
 
-// Handle delete doctor action
+// Handle delete doctor action (Note: This seems redundant; keeping only the first delete logic)
 if (isset($_GET['delete'])) {
     $doctor_id = mysqli_real_escape_string($conn, $_GET['delete']);
     $delete_query = "DELETE FROM patientreg WHERE id = '$doctor_id'";
-    
     if (mysqli_query($conn, $delete_query)) {
         echo "<script>alert('patient deleted successfully!'); window.location.href='adminmanagepatient.php';</script>";
     } else {
         echo "<script>alert('Error deleting doctor.');</script>";
-    }}
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -58,8 +58,9 @@ if (isset($_GET['delete'])) {
                     <h2 class="page-title">Manage Patients</h2>
                     <p class="text-muted">View and manage registered patients</p>
                 </div>
-                
-               
+                <div>
+                    <a href="total_patients.php" class="btn btn-primary">View Total Patients Report</a>
+                </div>
             </div>
         </div>
 
@@ -95,13 +96,11 @@ if (isset($_GET['delete'])) {
                                              class="patient-avatar me-3" 
                                              onerror="this.onerror=null; this.src='images/profilepicdoct.jpg';">
                                         <div>
-                                            
-                                        <div class="fw-bold">
-    <a href="adminpatprofile.php?patient_id=<?php echo urlencode($patient['id']); ?>">
-        <?php echo htmlspecialchars($patient['name']); ?>
-    </a>
-</div>
-
+                                            <div class="fw-bold">
+                                                <a href="adminpatprofile.php?patient_id=<?php echo urlencode($patient['id']); ?>">
+                                                    <?php echo htmlspecialchars($patient['name']); ?>
+                                                </a>
+                                            </div>
                                             <div class="text-muted small">ID: <?php echo $patient['id']; ?></div>
                                         </div>
                                     </div>
@@ -126,11 +125,10 @@ if (isset($_GET['delete'])) {
                                             <i class="fas <?php echo ($patient['action'] == 'enabled') ? 'fa-ban' : 'fa-check'; ?>"></i> 
                                             <?php echo ($patient['action'] == 'enabled') ? 'Disable' : 'Enable'; ?>
                                         </a>
-                                    
                                         <a href="?delete=<?php echo $patient['id']; ?>" class="btn btn-sm btn-outline-danger"
-                           onclick="return confirm('Are you sure you want to delete this Patient?');">
-                            Delete
-                        </a>
+                                           onclick="return confirm('Are you sure you want to delete this Patient?');">
+                                            Delete
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
@@ -138,20 +136,10 @@ if (isset($_GET['delete'])) {
                         </tbody>
                     </table>
                 </div>
-
             </div>
         </div>
     </div>
 
-    <script>
-        function confirmDelete(id) {
-            if (confirm("Are you sure you want to delete this patient?")) {
-                window.location.href = "manage_patients.php?delete=" + id;
-            }
-        }
-    </script>
-</body>
-</html>
     <style>
         /* Page Styles */
         .page-title {
@@ -160,20 +148,15 @@ if (isset($_GET['delete'])) {
             font-size: 1.8rem;
             margin-bottom: 0.5rem;
         }
-
-        /* Search Form */
         .search-form .form-control {
             border-radius: 8px 0 0 8px;
             border: 1px solid #dee2e6;
             padding: 0.625rem 1rem;
         }
-
         .search-form .btn {
             border-radius: 0 8px 8px 0;
             padding: 0.625rem 1.25rem;
         }
-
-        /* Table Styles */
         .table th {
             background-color: #f8f9fa;
             font-weight: 600;
@@ -182,13 +165,10 @@ if (isset($_GET['delete'])) {
             letter-spacing: 0.5px;
             padding: 1rem;
         }
-
         .table td {
             padding: 1rem;
             vertical-align: middle;
         }
-
-        /* Patient Avatar */
         .patient-avatar {
             width: 40px;
             height: 40px;
@@ -197,74 +177,56 @@ if (isset($_GET['delete'])) {
             border: 2px solid #fff;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-
-        /* Card Styles */
         .card {
             border-radius: 15px;
             border: none;
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
         }
-
         .card-body {
             padding: 1.5rem;
         }
-
-        /* Button Styles */
         .btn-group .btn {
             padding: 0.25rem 0.5rem;
             margin: 0 2px;
         }
-
         .btn-group .btn i {
             font-size: 0.875rem;
         }
         .fw-bold a { text-decoration: none; color: inherit; }
-
         .btn-success {
             background: linear-gradient(135deg, #28a745 0%, #218838 100%);
             border: none;
             padding: 0.625rem 1.25rem;
         }
-
         .btn-success:hover {
             background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
             transform: translateY(-1px);
         }
-
-        /* Badge Styles */
         .badge {
             padding: 0.5rem 0.75rem;
             font-weight: 500;
             border-radius: 6px;
         }
-
-        /* Pagination Styles */
         .pagination {
             gap: 0.25rem;
         }
-
         .page-link {
             border-radius: 6px;
             padding: 0.5rem 1rem;
             color: #2a3f54;
         }
-
         .page-item.active .page-link {
             background-color: #2a3f54;
             border-color: #2a3f54;
         }
-
-        /* Modal Styles */
         .modal-content {
             border-radius: 15px;
             border: none;
         }
-
         .modal-header {
             background-color: #f8f9fa;
             border-bottom: 1px solid #edf2f9;
         }
-
         .modal-footer {
             border-top: 1px solid #edf2f9;
         }
@@ -272,16 +234,12 @@ if (isset($_GET['delete'])) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Function to open delete confirmation modal with patient id
         function confirmDelete(id) {
-            const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            document.getElementById('confirmDelete').href = `manage_patients.php?delete=${id}`;
-            modal.show();
+            if (confirm("Are you sure you want to delete this patient?")) {
+                window.location.href = "manage_patients.php?delete=" + id;
+            }
         }
-
-        // Function to export patient data
         function exportToExcel() {
-            // Implement Excel export functionality
             window.location.href = 'export_patients.php';
         }
     </script>

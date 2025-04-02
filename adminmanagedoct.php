@@ -4,7 +4,7 @@ include('db_connection.php');
 include('adminheader.php');
 
 // Handle enable/disable doctor action
-if (isset($_GET['toggle_action'])) { // Ensure the database connection is included
+if (isset($_GET['toggle_action'])) { 
     $doctor_id = mysqli_real_escape_string($conn, $_GET['toggle_action']);
     $current_action = mysqli_real_escape_string($conn, $_GET['action']);
     
@@ -15,7 +15,6 @@ if (isset($_GET['toggle_action'])) { // Ensure the database connection is includ
     echo "<script>window.location.href='" . $_SERVER['PHP_SELF'] . "';</script>";
     exit();
 }
-
 
 // Handle delete doctor action
 if (isset($_GET['delete'])) {
@@ -47,278 +46,227 @@ $doctors_result = mysqli_query($conn, $doctors_query);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-       body { 
-    
-    color: #333;
-    line-height: 1.6;
-    margin: 0;
-    padding: 0;
-}
-
-.container2 { 
-    max-width: 1200px; 
-    margin: 0 auto; 
-    background: #fff; 
-    padding: 0;
-    
-}
-
-h2, h3 {
-    color: #2d3e50;
-    font-weight: 600;
-}
-
-/* Page header styling */
-h2.text-center {
-    font-size: 24px;
-    padding: 20px 0;
-    margin: 0;
-    background: #fff;
-    border-bottom: none;
-    text-align: left !important;
-    padding-left: 20px;
-}
-
-/* Page subtitle */
-.page-subtitle {
-    color: #6c757d;
-    font-size: 14px;
-    margin-top: -15px;
-    margin-bottom: 20px;
-    padding-left: 20px;
-}
-
-/* Table styling */
-.table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    margin-bottom: 0;
-    border: none;
-    box-shadow: none;
-}
-
-.table th {
-    background: #f8f9fa;
-    color: #495057;
-    text-align: left;
-    padding: 15px 20px;
-    font-weight: 600;
-    border-bottom: 1px solid #dee2e6;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.table td {
-    padding: 15px 20px;
-    border-bottom: 1px solid #f0f0f0;
-    vertical-align: middle;
-    font-size: 14px;
-}
-
-.table tbody tr:hover {
-    background-color: #f8f9fa;
-}
-
-/* Status badge */
-.status-badge, .action-enabled, .action-disabled {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.action-enabled, .approved, .status-badge.enabled {
-    background: #28a745;
-    color: white;
-}
-
-.action-disabled, .status-badge.disabled {
-    background: #6c757d;
-    color: white;
-}
-
-.pending {
-    background: #ffc107;
-    color: #212529;
-}
-
-/* Action buttons */
-.action-btn {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 4px;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    font-size: 12px;
-    font-weight: 500;
-    margin-right: 5px;
-    border: none;
-}
-
-.toggle-btn, .disable-btn {
-    background: #ffc107;
-    color: #212529;
-}
-
-.delete-btn {
-    background: #fff;
-    color: #dc3545;
-    border: 1px solid #dc3545;
-}
-
-.approve-btn {
-    background: #28a745;
-    color: white;
-}
-
-.reject-btn {
-    background: #dc3545;
-    color: white;
-}
-
-/* User photos */
-.doctor-photo, img[width="50"] {
-    width: 40px !important;
-    height: 40px !important;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #f0f0f0;
-    margin-right: 10px;
-}
-
-/* Patient/Doctor name styling */
-.patient-name, .table td:nth-child(2) {
-    font-weight: 600;
-    font-size: 14px;
-}
-
-.patient-id, .table td:nth-child(2) small {
-    display: block;
-    color: #6c757d;
-    font-size: 12px;
-    font-weight: normal;
-}
-
-/* Contact info styling */
-.contact-email {
-    display: block;
-    margin-bottom: 2px;
-}
-
-.contact-phone {
-    display: block;
-    color: #6c757d;
-}
-
-/* Age/Gender styling */
-.age-gender-info {
-    line-height: 1.4;
-}
-
-/* Header section */
-.page-header {
-    padding: 20px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
-    margin-bottom: 0;
-}
-
-.page-header h1 {
-    margin: 0;
-    font-size: 28px;
-    color: #2d3e50;
-}
-
-.page-header p {
-    margin: 5px 0 0;
-    color: #6c757d;
-}
-
-/* Empty state */
-.empty-state {
-    text-align: center;
-    padding: 30px;
-    color: #6c757d;
-}
-
-/* Adaptations for the specific layout in the image */
-h2, h3 {
-    font-weight: 600;
-    margin-bottom: 5px;
-}
-
-/* Create the top section like in the image */
-.header-section {
-    background: #fff;
-    padding: 20px;
-    border-bottom: 1px solid #e3e3e3;
-}
-
-.header-section h1 {
-    font-size: 24px;
-    margin: 0;
-    color: #2d3e50;
-}
-
-.header-section p {
-    margin: 5px 0 0;
-    color: #6c757d;
-    font-size: 14px;
-}
-
-/* Responsive styles */
-@media (max-width: 768px) {
-    .table {
-        display: block;
-        overflow-x: auto;
-    }
-    
-    .container2 {
-        margin: 0;
-        width: 100%;
-    }
-}
-
-/* Override specific elements to match the image */
-.table th:first-child, .table td:first-child {
-    padding-left: 20px;
-}
-
-/* Remove default container padding */
-.container2 {
-    padding: 0;
-}
-
-/* Add ID column width */
-.table th:first-child, .table td:first-child {
-    width: 60px;
-}
-
-/* Add specific button styles to match the image */
-.action-btn.delete-btn {
-    background-color: #fff;
-    color: #dc3545;
-    border: 1px solid #dc3545;
-}
-
-.action-btn.toggle-btn, .action-btn.disable-btn {
-    background-color: #ffc107;
-    color: #212529;
-}
-
-/* Adjust the enabled badge */
-.status-badge.enabled, .action-enabled {
-    background-color: #28a745;
-    color: white;
-    font-size: 12px;
-    padding: 6px 12px;
-    border-radius: 4px;
-}
-.fw-bold a { text-decoration: none; color: inherit; }
-        
+        body { 
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        .container2 { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: #fff; 
+            padding: 0;
+        }
+        h2, h3 {
+            color: #2d3e50;
+            font-weight: 600;
+        }
+        h2.text-center {
+            font-size: 24px;
+            padding: 20px 0;
+            margin: 0;
+            background: #fff;
+            border-bottom: none;
+            text-align: left !important;
+            padding-left: 20px;
+        }
+        .page-subtitle {
+            color: #6c757d;
+            font-size: 14px;
+            margin-top: -15px;
+            margin-bottom: 20px;
+            padding-left: 20px;
+        }
+        .table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 0;
+            border: none;
+            box-shadow: none;
+        }
+        .table th {
+            background: #f8f9fa;
+            color: #495057;
+            text-align: left;
+            padding: 15px 20px;
+            font-weight: 600;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .table td {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        .status-badge, .action-enabled, .action-disabled {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .action-enabled, .approved, .status-badge.enabled {
+            background: #28a745;
+            color: white;
+        }
+        .action-disabled, .status-badge.disabled {
+            background: #6c757d;
+            color: white;
+        }
+        .pending {
+            background: #ffc107;
+            color: #212529;
+        }
+        .action-btn {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 12px;
+            font-weight: 500;
+            margin-right: 5px;
+            border: none;
+        }
+        .toggle-btn, .disable-btn {
+            background: #ffc107;
+            color: #212529;
+        }
+        .delete-btn {
+            background: #fff;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+        .approve-btn {
+            background: #28a745;
+            color: white;
+        }
+        .reject-btn {
+            background: #dc3545;
+            color: white;
+        }
+        .total-doctors-btn {
+            background: #007bff;
+            color: white;
+        }
+        .total-doctors-btn:hover {
+            background: #0056b3;
+        }
+        .doctor-photo, img[width="50"] {
+            width: 40px !important;
+            height: 40px !important;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #f0f0f0;
+            margin-right: 10px;
+        }
+        .patient-name, .table td:nth-child(2) {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .patient-id, .table td:nth-child(2) small {
+            display: block;
+            color: #6c757d;
+            font-size: 12px;
+            font-weight: normal;
+        }
+        .contact-email {
+            display: block;
+            margin-bottom: 2px;
+        }
+        .contact-phone {
+            display: block;
+            color: #6c757d;
+        }
+        .age-gender-info {
+            line-height: 1.4;
+        }
+        .page-header {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 0;
+        }
+        .page-header h1 {
+            margin: 0;
+            font-size: 28px;
+            color: #2d3e50;
+        }
+        .page-header p {
+            margin: 5px 0 0;
+            color: #6c757d;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #6c757d;
+        }
+        h2, h3 {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .header-section {
+            background: #fff;
+            padding: 20px;
+            border-bottom: 1px solid #e3e3e3;
+        }
+        .header-section h1 {
+            font-size: 24px;
+            margin: 0;
+            color: #2d3e50;
+        }
+        .header-section p {
+            margin: 5px 0 0;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        @media (max-width: 768px) {
+            .table {
+                display: block;
+                overflow-x: auto;
+            }
+            .container2 {
+                margin: 0;
+                width: 100%;
+            }
+        }
+        .table th:first-child, .table td:first-child {
+            padding-left: 20px;
+        }
+        .container2 {
+            padding: 0;
+        }
+        .table th:first-child, .table td:first-child {
+            width: 60px;
+        }
+        .action-btn.delete-btn {
+            background-color: #fff;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+        .action-btn.toggle-btn, .action-btn.disable-btn {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .status-badge.enabled, .action-enabled {
+            background-color: #28a745;
+            color: white;
+            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+        .fw-bold a { 
+            text-decoration: none; 
+            color: inherit; 
+        }
     </style>
 </head>
 <body>
@@ -362,32 +310,33 @@ h2, h3 {
                                 Approve
                             </a>
                             <button type="button" class="action-btn reject-btn" data-bs-toggle="modal" data-bs-target="#rejectModal<?php echo $row['id']; ?>">
-        Reject
-    </button>
+                                Reject
+                            </button>
 
-    <!-- Rejection Reason Modal -->
-    <div class="modal fade" id="rejectModal<?php echo $row['id']; ?>" tabindex="-1" aria-labelledby="rejectModalLabel<?php echo $row['id']; ?>" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="rejectModalLabel<?php echo $row['id']; ?>">Provide Rejection Reason</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form action="rejectdoctor.php" method="POST">
-                    <div class="modal-body">
-                        <input type="hidden" name="doctor_id" value="<?php echo $row['id']; ?>">
-                        <div class="mb-3">
-                            <label for="rejection_reason" class="form-label">Rejection Reason:</label>
-                            <textarea class="form-control" name="rejection_reason" id="rejection_reason" rows="3" required></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-danger">Confirm Rejection</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                            <!-- Rejection Reason Modal -->
+                            <div class="modal fade" id="rejectModal<?php echo $row['id']; ?>" tabindex="-1" aria-labelledby="rejectModalLabel<?php echo $row['id']; ?>" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="rejectModalLabel<?php echo $row['id']; ?>">Provide Rejection Reason</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <form action="rejectdoctor.php" method="POST">
+                                            <div class="modal-body">
+                                                <input type="hidden" name="doctor_id" value="<?php echo $row['id']; ?>">
+                                                <div class="mb-3">
+                                                    <label for="rejection_reason" class="form-label">Rejection Reason:</label>
+                                                    <textarea class="form-control" name="rejection_reason" id="rejection_reason" rows="3" required></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-danger">Confirm Rejection</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 <?php } ?>
@@ -399,9 +348,13 @@ h2, h3 {
 
     <hr>
 
-
     <!-- All Doctors Section -->
     <h3>Registered Doctors</h3>
+    <br>
+    <div style="margin-bottom: 15px;">
+        <a href="total_doctors.php" class="action-btn total-doctors-btn">View Total Doctors Report</a>
+    </div>
+    <br>
     <table class="table">
         <thead>
             <tr>
@@ -424,10 +377,10 @@ h2, h3 {
                              class="doctor-photo" width="50" height="50" onerror="this.onerror=null; this.src='images/profilepicdoct.jpg';" >
                     </td>
                     <td><div class="fw-bold">
-    <a href="admindoctprofile.php?doctor_id=<?php echo urlencode($doctor['id']); ?>">
-        <?php echo htmlspecialchars($doctor['name']); ?>
-    </a>
-</div></td>
+                        <a href="admindoctprofile.php?doctor_id=<?php echo urlencode($doctor['id']); ?>">
+                            <?php echo htmlspecialchars($doctor['name']); ?>
+                        </a>
+                    </div></td>
                     <td><?php echo htmlspecialchars($doctor['specialization']); ?></td>
                     <td><?php echo htmlspecialchars($doctor['email']); ?><br><?php echo htmlspecialchars($doctor['phone']); ?></td>
                     <td>
@@ -453,8 +406,6 @@ h2, h3 {
             <?php endwhile; ?>
         </tbody>
     </table>
-
 </div>
 </body>
 </html>
-s
