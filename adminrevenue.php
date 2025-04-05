@@ -368,7 +368,14 @@ if ($paymentMethodResult) $conn->query($paymentMethodSql);
     <div class="container2">
         <header>
             <h2><i class="fas fa-credit-card"></i> Payment Details & Revenue</h2>
-           
+            <div style="display: flex; gap: 10px; margin-top: 10px;text-decoration: none;">
+                <a href="revenue_report.php" class="export-btn" style="text-decoration: none;">
+                    <br>
+                    <i class="fas fa-file-alt"></i> Consolidated Revenue Report
+                    
+                </a>
+                <br>
+            </div>
         </header>
 
         <br>

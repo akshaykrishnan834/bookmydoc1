@@ -229,154 +229,30 @@ $avg_transaction = ($transaction_count > 0) ? $total_earnings / $transaction_cou
                 display: block !important;
             }
             .dashboard-container {
-                box-shadow: none;
-                margin: 0;
-                width: 100%;
-                border-radius: 0;
+                display: none !important;
             }
-            .dashboard-header, .table thead th, .dashboard-body, 
-            .table-responsive, .earnings-summary, .earnings-card {
-                box-shadow: none;
-                border-radius: 0;
-            }
-            .dashboard-header {
-                background: #4e73df !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            .table thead th {
-                background-color: #4e73df !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-                color: white !important;
-            }
-            .badge-success {
-                background-color: #1cc88a !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+            header, nav, .navbar {
+                display: none !important;
             }
             body {
                 background-color: white !important;
+                margin: 0;
+                padding: 0;
             }
             
             /* Show print report */
             .print-report {
                 display: block !important;
-                page-break-before: always;
-            }
-            
-            /* Report styling */
-            .report-header {
-                text-align: center;
-                margin-bottom: 20px;
-                border-bottom: 2px solid #333;
-                padding-bottom: 20px;
-            }
-            .report-header h1 {
-                margin: 0;
-                font-size: 24px;
-                font-weight: bold;
-            }
-            .report-header p {
-                margin: 5px 0 0 0;
-                font-size: 14px;
-            }
-            .report-doctor-info {
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 30px;
-            }
-            .report-doctor-info div {
-                width: 50%;
-            }
-            .report-doctor-info h2 {
-                font-size: 16px;
-                font-weight: bold;
-                margin-bottom: 10px;
-                text-transform: uppercase;
-            }
-            .report-doctor-info p {
-                margin: 5px 0;
-                font-size: 14px;
-            }
-            .report-summary {
-                margin-bottom: 30px;
-            }
-            .report-summary h2 {
-                font-size: 16px;
-                font-weight: bold;
-                margin-bottom: 10px;
-                text-transform: uppercase;
-            }
-            .report-summary-table {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
                 width: 100%;
-                border-collapse: collapse;
-            }
-            .report-summary-table th,
-            .report-summary-table td {
-                border: 1px solid #ddd;
-                padding: 10px;
-                text-align: left;
-            }
-            .report-summary-table th {
-                background-color: #f2f2f2;
-                font-weight: bold;
-            }
-            .report-monthly-table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 30px;
-            }
-            .report-monthly-table th,
-            .report-monthly-table td {
-                border: 1px solid #ddd;
-                padding: 10px;
-                text-align: left;
-            }
-            .report-monthly-table th {
-                background-color: #f2f2f2;
-                font-weight: bold;
-            }
-            .report-transactions {
-                margin-bottom: 30px;
-            }
-            .report-transactions h2 {
-                font-size: 16px;
-                font-weight: bold;
-                margin-bottom: 10px;
-                text-transform: uppercase;
-            }
-            .report-transactions-table {
-                width: 100%;
-                border-collapse: collapse;
-            }
-            .report-transactions-table th,
-            .report-transactions-table td {
-                border: 1px solid #ddd;
-                padding: 10px;
-                text-align: left;
-            }
-            .report-transactions-table th {
-                background-color: #f2f2f2;
-                font-weight: bold;
-            }
-            .report-footer {
-                margin-top: 50px;
                 text-align: center;
-                font-size: 12px;
-                color: #666;
-            }
-            .report-footer p {
-                margin: 5px 0;
-            }
-            .signature-line {
-                margin-top: 80px;
-                border-top: 1px solid #333;
-                width: 250px;
-                margin-left: auto;
-                margin-right: auto;
-                text-align: center;
-                padding-top: 10px;
+                font-size: 36px;
+                font-weight: bold;
+                color: black;
+                z-index: 9999;
             }
         }
         
@@ -391,8 +267,8 @@ $avg_transaction = ($transaction_count > 0) ? $total_earnings / $transaction_cou
     
     <div class="dashboard-body">
         <div class="no-print mb-3 text-end">
-            <button onclick="window.print()" class="btn btn-primary">
-                <i class="fas fa-file-pdf me-2"></i>Generate Formal Report
+            <button onclick="window.location.href='print_report.php'" class="btn btn-primary">
+                Generate Consolidated Report
             </button>
         </div>
 
@@ -454,108 +330,228 @@ $avg_transaction = ($transaction_count > 0) ? $total_earnings / $transaction_cou
     </div>
     
     <!-- FORMAL REPORT - Only visible when printing -->
-    <div class="print-report">
-        <div class="report-header">
-            <h1>EARNINGS REPORT</h1>
-            <p>BookMyDoc Healthcare Services</p>
-            <p>Report Generated: <?php echo date("d M Y, h:i A"); ?></p>
+    <div class="print-section" id="printSection">
+        <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+            <div style="font-size: 24pt; text-transform: uppercase;">
+                Demo Book My Doc
+            </div>
+        </div>
+    </div>
         </div>
         
-        <div class="report-doctor-info">
-            <div>
-                <h2>Doctor Information</h2>
-                <p><strong>Name:</strong> Dr. <?php echo htmlspecialchars($doctor_data['name']); ?></p>
-                <p><strong>Specialization:</strong> <?php echo htmlspecialchars($doctor_data['specialization']); ?></p>
-                <p><strong>Email:</strong> <?php echo htmlspecialchars($doctor_data['email']); ?></p>
-                <p><strong>Phone:</strong> <?php echo htmlspecialchars($doctor_data['phone']); ?></p>
-            </div>
-            <div>
-                <h2>Report Summary</h2>
-                <p><strong>Total Earnings:</strong> ₹<?php echo number_format($total_earnings, 2); ?></p>
-                <p><strong>Total Transactions:</strong> <?php echo $transaction_count; ?></p>
-                <p><strong>Average Transaction Value:</strong> ₹<?php echo number_format($avg_transaction, 2); ?></p>
-                <p><strong>Report Period:</strong> All Time</p>
-            </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+function printReport() {
+    // Create a new window for printing
+    var printWindow = window.open('', '_blank');
+    
+    // Get the current date
+    var today = new Date();
+    var dateStr = today.toLocaleDateString();
+    
+    // Write the content to the new window
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Bookings and Earnings Report</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                    color: #333;
+                }
+                .report-header {
+                    text-align: center;
+                    margin-bottom: 30px;
+                    border-bottom: 2px solid #333;
+                    padding-bottom: 20px;
+                }
+                .report-header h1 {
+                    margin: 0;
+                    font-size: 24px;
+                    font-weight: bold;
+                }
+                .report-header p {
+                    margin: 5px 0 0 0;
+                    font-size: 14px;
+                }
+                .report-summary {
+                    margin-bottom: 30px;
+                }
+                .report-summary h2 {
+                    font-size: 18px;
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                    border-bottom: 1px solid #ddd;
+                    padding-bottom: 5px;
+                }
+                .summary-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                }
+                .summary-table th, .summary-table td {
+                    border: 1px solid #ddd;
+                    padding: 10px;
+                    text-align: left;
+                }
+                .summary-table th {
+                    background-color: #f2f2f2;
+                    font-weight: bold;
+                }
+                .summary-table tr:nth-child(even) {
+                    background-color: #f9f9f9;
+                }
+                .bookings-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                }
+                .bookings-table th, .bookings-table td {
+                    border: 1px solid #ddd;
+                    padding: 10px;
+                    text-align: left;
+                }
+                .bookings-table th {
+                    background-color: #f2f2f2;
+                    font-weight: bold;
+                }
+                .bookings-table tr:nth-child(even) {
+                    background-color: #f9f9f9;
+                }
+                .report-footer {
+                    margin-top: 50px;
+                    text-align: center;
+                    font-size: 12px;
+                    color: #666;
+                    border-top: 1px solid #ddd;
+                    padding-top: 20px;
+                }
+                .signature-line {
+                    margin-top: 80px;
+                    border-top: 1px solid #333;
+                    width: 250px;
+                    margin-left: auto;
+                    margin-right: auto;
+                    text-align: center;
+                    padding-top: 10px;
+                }
+                @media print {
+                    body {
+                        margin: 0;
+                        padding: 20px;
+                    }
+                    .summary-table th, .bookings-table th {
+                        background-color: #f2f2f2 !important;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    .summary-table tr:nth-child(even), .bookings-table tr:nth-child(even) {
+                        background-color: #f9f9f9 !important;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="report-header">
+                <h1>BOOKINGS AND EARNINGS REPORT</h1>
+                <p>Generated on: ${dateStr}</p>
         </div>
         
         <div class="report-summary">
             <h2>Financial Summary</h2>
-            <table class="report-summary-table">
+                <table class="summary-table">
                 <tr>
                     <th width="70%">Description</th>
                     <th width="30%">Amount (₹)</th>
                 </tr>
                 <tr>
                     <td>Total Gross Earnings</td>
-                    <td><?php echo number_format($total_earnings, 2); ?></td>
+                        <td>₹${<?php echo number_format($total_earnings, 2); ?>}</td>
+                    </tr>
+                    <tr>
+                        <td>Average Earnings Per Booking</td>
+                        <td>₹${<?php echo number_format($avg_transaction, 2); ?>}</td>
+                    </tr>
+                    <tr>
+                        <td>Current Month Earnings (${<?php echo date('M Y'); ?>})</td>
+                        <td>₹${<?php echo number_format($monthly_earnings[$current_month] ?? 0, 2); ?>}</td>
                 </tr>
                 <tr>
-                    <td>Average Earnings Per Transaction</td>
-                    <td><?php echo number_format($avg_transaction, 2); ?></td>
+                        <td>Current Month Bookings (${<?php echo date('M Y'); ?>})</td>
+                        <td>${<?php echo $monthly_transactions[$current_month] ?? 0; ?>}</td>
                 </tr>
                 <tr>
-                    <td>Current Month Earnings (<?php echo date('M Y'); ?>)</td>
-                    <td><?php echo number_format($monthly_earnings[$current_month] ?? 0, 2); ?></td>
+                        <td>Total Bookings</td>
+                        <td>${<?php echo $transaction_count; ?>}</td>
                 </tr>
             </table>
         </div>
         
-        <div class="report-monthly">
-            <h2>Monthly Earnings Breakdown</h2>
-            <table class="report-monthly-table">
-                <tr>
-                    <th width="40%">Month</th>
-                    <th width="30%">Transactions</th>
-                    <th width="30%">Earnings (₹)</th>
+            <div class="report-summary">
+                <h2>Monthly Bookings & Earnings Breakdown</h2>
+                <table class="summary-table">
+                    <tr>
+                        <th width="30%">Month</th>
+                        <th width="20%">Bookings</th>
+                        <th width="25%">Earnings (₹)</th>
+                        <th width="25%">Avg. Per Booking (₹)</th>
                 </tr>
                 <?php 
                 krsort($monthly_earnings); // Sort by month (newest first)
                 foreach ($monthly_earnings as $month => $amount): 
+                        $month_bookings = $monthly_transactions[$month];
+                        $month_avg = ($month_bookings > 0) ? $amount / $month_bookings : 0;
                 ?>
                 <tr>
-                    <td><?php echo $month; ?></td>
-                    <td><?php echo $monthly_transactions[$month]; ?></td>
-                    <td><?php echo number_format($amount, 2); ?></td>
+                        <td>${<?php echo $month; ?>}</td>
+                        <td>${<?php echo $month_bookings; ?>}</td>
+                        <td>₹${<?php echo number_format($amount, 2); ?>}</td>
+                        <td>₹${<?php echo number_format($month_avg, 2); ?>}</td>
                 </tr>
                 <?php endforeach; ?>
                 <tr>
                     <th>Total</th>
-                    <th><?php echo $transaction_count; ?></th>
-                    <th><?php echo number_format($total_earnings, 2); ?></th>
+                        <th>${<?php echo $transaction_count; ?>}</th>
+                        <th>₹${<?php echo number_format($total_earnings, 2); ?>}</th>
+                        <th>₹${<?php echo number_format($avg_transaction, 2); ?>}</th>
                 </tr>
             </table>
         </div>
         
-        <div class="report-transactions">
-            <h2>Transaction History</h2>
-            <table class="report-transactions-table">
-                <tr>
-                    <th>Appointment ID</th>
+            <div class="report-summary">
+                <h2>Recent Bookings</h2>
+                <table class="bookings-table">
+                    <tr>
+                        <th>Booking ID</th>
                     <th>Patient Name</th>
                     <th>Appointment Date</th>
-                    <th>Appointment Time</th>s
                     <th>Payment Date</th>
                     <th>Amount (₹)</th>
                 </tr>
                 <?php 
                 $result->data_seek(0);
+                    $count = 0;
                 if ($result->num_rows > 0) {
-                    while ($row = $result->fetch_assoc()): 
+                        while ($row = $result->fetch_assoc() && $count < 10): 
+                            $count++;
                 ?>
                 <tr>
-                <td>#<?php echo $row['id']; ?></td>
-<td><?php echo htmlspecialchars($row['patient_name']); ?></td>
-<td><?php echo date("d M Y", strtotime($row['appointment_date'])); ?></td>
-<td><?php echo $row['start_time'] . ' - ' . $row['end_time']; ?></td>
-<td><?php echo date("d M Y", strtotime($row['payment_date'])); ?></td>
-<td><?php echo number_format($row['amount'], 2); ?></td>
+                        <td>#${<?php echo $row['id']; ?>}</td>
+                        <td>${<?php echo htmlspecialchars($row['patient_name']); ?>}</td>
+                        <td>${<?php echo date("d M Y", strtotime($row['appointment_date'])); ?>}</td>
+                        <td>${<?php echo date("d M Y", strtotime($row['payment_date'])); ?>}</td>
+                        <td>₹${<?php echo number_format($row['amount'], 2); ?>}</td>
                 </tr>
                 <?php 
                     endwhile; 
                 } else { 
                 ?>
                 <tr>
-                    <td colspan="5" style="text-align: center;">No transactions found</td>
+                        <td colspan="5" style="text-align: center;">No booking records found</td>
                 </tr>
                 <?php } ?>
             </table>
@@ -566,12 +562,21 @@ $avg_transaction = ($transaction_count > 0) ? $total_earnings / $transaction_cou
                 Doctor's Signature
             </div>
             <p>This is a computer-generated report and does not require a physical signature.</p>
-            <p>BookMyDoc Healthcare Services | <?php echo date("Y"); ?> &copy; All Rights Reserved</p>
         </div>
-    </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+        </body>
+        </html>
+    `);
+    
+    // Close the document
+    printWindow.document.close();
+    
+    // Wait for the content to load
+    printWindow.onload = function() {
+        // Print the window
+        printWindow.print();
+    };
+}
+</script>
 </body>
 </html>
 

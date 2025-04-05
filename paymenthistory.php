@@ -391,18 +391,87 @@ function printInvoice(paymentData) {
     document.getElementById('invoice-method').textContent = paymentData.payment_method;
     document.getElementById('invoice-payment-status').textContent = paymentData.payment_status;
 
+    // Create a new window for printing
     const printWindow = window.open('', '_blank');
-    printWindow.document.write('<html><head><title>Invoice</title>');
-    printWindow.document.write('<style>' + document.querySelector('style').innerHTML + '</style>');
-    printWindow.document.write('</head><body>');
-    printWindow.document.write(document.getElementById('invoice-template').innerHTML);
-    printWindow.document.write('</body></html>');
+    
+    // Write the HTML content to the new window with A4-specific styling
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Invoice</title>
+            <style>
+                /* A4 paper styling */
+                @page {
+                    size: A4;
+                    margin: 1.5cm;
+                }
+                
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    width: 210mm; /* A4 width */
+                    height: 297mm; /* A4 height */
+                    background-color: white;
+                }
+                
+                .invoice-box {
+                    width: 100%;
+                    max-width: 210mm;
+                    margin: 0 auto;
+                    padding: 20px;
+                    box-sizing: border-box;
+                }
+                
+                /* Table styling for better alignment */
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 15px;
+                }
+                
+                td, th {
+                    padding: 8px;
+                    vertical-align: top;
+                }
+                
+                /* Ensure content fits on A4 */
+                .invoice-box * {
+                    max-width: 100%;
+                    overflow-wrap: break-word;
+                }
+                
+                /* Hide elements with no-print class */
+                .no-print {
+                    display: none !important;
+                }
+                
+                /* Ensure proper page breaks */
+                .page-break {
+                    page-break-after: always;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="invoice-box">
+                ${document.getElementById('invoice-template').innerHTML}
+            </div>
+        </body>
+        </html>
+    `);
+    
     printWindow.document.close();
     
-    printWindow.onload = function() {
+    // Wait for resources to load before printing
+    setTimeout(function() {
+        printWindow.focus();
         printWindow.print();
-        printWindow.close();
-    };
+        // Close the window after printing (or if printing is cancelled)
+        setTimeout(function() {
+            printWindow.close();
+        }, 1000);
+    }, 500);
 }
 </script>
 </body>

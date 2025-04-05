@@ -1,21 +1,65 @@
 <?php
 include('db_connection.php');
 
-// Fetch all patients
-$patients_query = "SELECT * FROM patientreg ORDER BY name ASC";
-$patients_result = mysqli_query($conn, $patients_query);
+// Fetch all patients with their appointment details
+$sql = "SELECT 
+            p.id,
+            p.name as patient_name,
+            p.email,
+            p.phone,
+            p.gender,
+            p.dob,
+            ar.appointment_date,
+            da.start_time,
+            da.end_time,
+            d.name as doctor_name,
+            d.specialization,
+            ar.status,
+            ar.patient_condition,
+            ar.created_at as booking_date,
+            pay.amount as payment_amount,
+            pay.payment_method,
+            pay.status as payment_status
+        FROM patientreg p
+        LEFT JOIN appointment_requests ar ON p.id = ar.user_id
+        LEFT JOIN doctor_availability da ON ar.slot_id = da.id
+        LEFT JOIN doctorreg d ON ar.doctor_id = d.id
+        LEFT JOIN payments pay ON ar.id = pay.appointment_id
+        ORDER BY p.name ASC, ar.appointment_date DESC";
 
-// Fetch appointments for each patient
-$appointments_query = "SELECT a.*, d.name AS doctor_name 
-                      FROM appointment_requests a 
-                      LEFT JOIN doctorreg d ON a.doctor_id = d.id 
-                      ORDER BY a.user_id, a.appointment_date DESC";
-$appointments_result = mysqli_query($conn, $appointments_query);
+$result = mysqli_query($conn, $sql);
 
-// Group appointments by patient
-$appointments_by_patient = [];
-while ($appointment = mysqli_fetch_assoc($appointments_result)) {
-    $appointments_by_patient[$appointment['user_id']][] = $appointment;
+// Calculate summary statistics
+$total_stats = [
+    'total_patients' => 0,
+    'total_appointments' => 0,
+    'total_approved' => 0,
+    'total_pending' => 0,
+    'total_rejected' => 0,
+    'total_payments' => 0
+];
+
+$unique_patients = [];
+if ($result && mysqli_num_rows($result) > 0) {
+    mysqli_data_seek($result, 0); // Reset pointer to beginning
+    while ($row = mysqli_fetch_assoc($result)) {
+        if (!in_array($row['id'], $unique_patients)) {
+            $unique_patients[] = $row['id'];
+            $total_stats['total_patients']++;
+        }
+        if ($row['appointment_date']) {
+            $total_stats['total_appointments']++;
+            switch(strtolower($row['status'])) {
+                case 'approved': $total_stats['total_approved']++; break;
+                case 'pending': $total_stats['total_pending']++; break;
+                case 'rejected': $total_stats['total_rejected']++; break;
+            }
+        }
+        if ($row['payment_amount']) {
+            $total_stats['total_payments'] += $row['payment_amount'];
+        }
+    }
+    mysqli_data_seek($result, 0); // Reset pointer for the main table
 }
 ?>
 
@@ -24,143 +68,212 @@ while ($appointment = mysqli_fetch_assoc($appointments_result)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patients Invoice - BookMyDoc</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Patient Report - BookMyDoc</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            color: #333;
             line-height: 1.6;
-            margin: 0;
-            padding: 0;
+            margin: 40px;
         }
-        .container {
-            max-width: 1200px;
-            margin: 20px auto;
-            background: #fff;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        .invoice-header {
+
+        .header {
             text-align: center;
             margin-bottom: 20px;
         }
-        .invoice-header h2 {
+
+        .header h1 {
             font-size: 28px;
-            color: #2a3f54;
-            margin: 0;
+            margin: 0 0 5px 0;
+            text-transform: uppercase;
+            font-weight: bold;
         }
-        .invoice-header p {
-            color: #6c757d;
+
+        .header h2 {
+            font-size: 24px;
+            margin: 15px 0 10px 0;
+        }
+
+        .header h3 {
+            font-size: 18px;
             margin: 5px 0;
+            font-weight: normal;
         }
-        .patient-section {
-            margin-bottom: 30px;
-        }
-        .patient-section h3 {
-            color: #2a3f54;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-        .table {
+
+        table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin: 20px 0;
+            font-size: 14px;
         }
-        .table th, .table td {
-            padding: 10px;
-            border: 1px solid #dee2e6;
+
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
             text-align: left;
         }
-        .table th {
-            background: #f8f9fa;
-            color: #495057;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.85rem;
+
+        th {
+            background-color: #f0f0f0;
         }
-        .print-btn {
-            display: block;
-            width: 150px;
-            margin: 20px auto;
-            padding: 10px;
-            background: #28a745;
-            color: white;
-            text-align: center;
-            text-decoration: none;
-            border-radius: 5px;
-            cursor: pointer;
-            border: none;
-        }
-        .print-btn:hover {
-            background: #218838;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 20px;
-            color: #6c757d;
-        }
+
+        .status-approved { color: green; }
+        .status-pending { color: orange; }
+        .status-rejected { color: red; }
+        .status-expired { color: gray; }
+
         @media print {
-            .print-btn, .no-print {
-                display: none;
-            }
-            .container {
-                box-shadow: none;
-                margin: 0;
-                width: 100%;
-            }
+            body { margin: 20px; }
+            .no-print { display: none; }
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="invoice-header">
-    <h2>BookMyDoc - Online Doctor Appointment Booking System </h2>
-    <h2>Appointments Analysis</h2>
-        <p>Generated on: <?php echo date('F d, Y'); ?></p>
-        <p>List of Patients and Their Appointments</p>
+    <div class="header">
+    <h1>Book My Doc</h1>
+        <h3>Online Doctor Appointment Booking System</h3>
+        <p>Phone: 7025572282 | Email: info@bookmydoc.com</p>
+        
+        
+        <p>Report Period: <?php echo date('F Y'); ?></p>
+        <p>Generated on: <?php echo date('d-m-Y'); ?></p>
+        <br>
+        <br>
+        <h2 style="margin-top: 20px;"><u>CONSOLIDATED PATIENTS REPORT</u><h2>
+        <br>
     </div>
 
-    <?php if (mysqli_num_rows($patients_result) > 0): ?>
-        <?php while ($patient = mysqli_fetch_assoc($patients_result)): ?>
-            <div class="patient-section">
-                <h3><?php echo htmlspecialchars($patient['name']); ?> (ID: <?php echo $patient['id']; ?>)</h3>
-                <p>Email: <?php echo htmlspecialchars($patient['email']); ?> | Phone: <?php echo htmlspecialchars($patient['phone']); ?> | Age: <?php echo $patient['age']; ?> | Gender: <?php echo $patient['gender']; ?></p>
+    <?php if (mysqli_num_rows($result) > 0): ?>
+        <table>
+            <thead>
+                <tr>
+                    <th>Sl.No</th>
+                    <th>Patient Name</th>
+                    <th>Contact Details</th>
+                    <th>Appointment Date</th>
+                    <th>Time</th>
+                    <th>Booking Date</th>
+                    <th>Doctor</th>
+                    <th>Condition</th>
+                    <th>Status</th>
+                    <th>Payment</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php 
+                $sl_no = 1;
+                while ($row = mysqli_fetch_assoc($result)): 
+                    $status_class = '';
+                    switch(strtolower($row['status'])) {
+                        case 'approved': $status_class = 'status-approved'; break;
+                        case 'pending': $status_class = 'status-pending'; break;
+                        case 'rejected': $status_class = 'status-rejected'; break;
+                        case 'expired': $status_class = 'status-expired'; break;
+                    }
+                ?>
+                    <tr>
+                        <td><?php echo $sl_no++; ?></td>
+                        <td>
+                            <?php echo htmlspecialchars($row['patient_name']); ?><br>
+                            <small>Gender: <?php echo htmlspecialchars($row['gender']); ?><br>
+                            DOB: <?php echo htmlspecialchars($row['dob']); ?></small>
+                        </td>
+                        <td>
+                            Email: <?php echo htmlspecialchars($row['email']); ?><br>
+                            Phone: <?php echo htmlspecialchars($row['phone']); ?>
+                        </td>
+                        <td><?php echo $row['appointment_date'] ? date('d-m-Y', strtotime($row['appointment_date'])) : 'Not scheduled'; ?></td>
+                        <td>
+                            <?php 
+                            if ($row['start_time'] && $row['end_time']) {
+                                echo date('h:i A', strtotime($row['start_time'])) . ' - ' . 
+                                     date('h:i A', strtotime($row['end_time']));
+                            } else {
+                                echo 'Not scheduled';
+                            }
+                            ?>
+                        </td>
+                        <td><?php echo $row['booking_date'] ? date('d-m-Y h:i A', strtotime($row['booking_date'])) : 'N/A'; ?></td>
+                        <td>
+                            <?php if ($row['doctor_name']): ?>
+                                Dr. <?php echo htmlspecialchars($row['doctor_name']); ?><br>
+                                <small><?php echo htmlspecialchars($row['specialization']); ?></small>
+                            <?php else: ?>
+                                Not assigned
+                            <?php endif; ?>
+                        </td>
+                        <td><?php echo htmlspecialchars($row['patient_condition'] ?? 'Not specified'); ?></td>
+                        <td class="<?php echo $status_class; ?>"><?php echo htmlspecialchars($row['status'] ?? 'N/A'); ?></td>
+                        <td>
+                            <?php if ($row['payment_amount']): ?>
+                                ₹<?php echo number_format($row['payment_amount'], 2); ?><br>
+                                <small>
+                                    <?php echo htmlspecialchars($row['payment_method']); ?><br>
+                                    <?php echo htmlspecialchars($row['payment_status']); ?>
+                                </small>
+                            <?php else: ?>
+                                No payment
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endwhile; ?>
+            </tbody>
+        </table>
+
+        <div style="margin: 40px 0; padding: 20px;">
+            <h2 style="font-size: 20px; margin-bottom: 20px;">Report Summary</h2>
+            
+            <div style="font-size: 16px; line-height: 2;">
+                <?php
+                // Get total number of doctors
+                $doctor_query = "SELECT COUNT(*) as doctor_count FROM doctorreg";
+                $doctor_result = mysqli_query($conn, $doctor_query);
+                $doctor_count = mysqli_fetch_assoc($doctor_result)['doctor_count'];
+                ?>
                 
-                <?php if (isset($appointments_by_patient[$patient['id']]) && !empty($appointments_by_patient[$patient['id']])): ?>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Appointment ID</th>
-                                <th>Doctor</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($appointments_by_patient[$patient['id']] as $appointment): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($appointment['id']); ?></td>
-                                    <td><?php echo htmlspecialchars($appointment['doctor_name']); ?></td>
-                                    <td><?php echo htmlspecialchars($appointment['appointment_date']); ?></td>
-                                    <td><?php echo htmlspecialchars($appointment['status']); ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php else: ?>
-                    <div class="empty-state">No appointments found for this patient.</div>
-                <?php endif; ?>
+                <p>Total Number of Doctors: <?php echo $doctor_count; ?></p>
+                <p>Total Appointments Handled: <?php echo $total_stats['total_appointments']; ?></p>
+                <p>Total Revenue Generated: ₹<?php echo number_format($total_stats['total_payments'], 2); ?></p>
             </div>
-        <?php endwhile; ?>
+        </div>
+        
+        <div style="margin: 40px 0; text-align: center;">
+            <p><strong>Report Generated By:</strong> BookMyDoc Management System</p>
+            
+        </div>
+<br>
+        <div style="display: flex; justify-content: space-between; margin-top: 50px; margin-bottom: 30px;">
+            <div style="text-align: center; width: 200px;">
+                <div style="border-top: 1px solid #000; padding-top: 5px;">
+                    Medical Director<br>
+                    <small>(Name & Signature)</small>
+                </div>
+            </div>
+            <div style="text-align: center; width: 200px;">
+                <div style="border-top: 1px solid #000; padding-top: 5px;">
+                    Administrative Officer<br>
+                    <small>(Name & Signature)</small>
+                </div>
+            </div>
+            <div style="text-align: center; width: 200px;">
+                <div style="border-top: 1px solid #000; padding-top: 5px;">
+                    System Administrator<br>
+                    <small>(Name & Signature)</small>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center; font-size: 12px;">
+            <p>This is a computer-generated report. No physical signature is required.</p>
+            <p>Document ID: PAT-<?php echo date('Ymd'); ?>-<?php echo rand(1000, 9999); ?></p>
+            
+        </div>
+    </div>
     <?php else: ?>
-        <div class="empty-state">No patients found.</div>
+        <p>No patients found in the system.</p>
     <?php endif; ?>
 
-    <button class="print-btn no-print" onclick="window.print()">Print Invoice</button>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/js/bootstrap.bundle.min.js"></script>
+    <div class="no-print" style="margin-top: 20px; text-align: center;">
+        <button onclick="window.print()">Print Report</button>
+    </div>
 </body>
 </html>

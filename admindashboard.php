@@ -57,16 +57,9 @@ $status_chart_data = json_encode($status_data);
 <body class="bg-light">
     <div class="container-fluid py-4">
         <div class="row mb-4">
-            <div class="col-12 d-flex justify-content-between align-items-center">
-                <div>
-                    <h2 class="admin-title">Dashboard Overview</h2>
-                    <p class="text-muted">Welcome back, Admin!</p>
-                </div>
-                <div>
-                    <a href="print_dashboard.php" class="btn btn-primary print-btn" target="_blank">
-                        <i class="fas fa-print me-2"></i>Print Dashboard
-                    </a>
-                </div>
+            <div class="col-12">
+                <h2 class="admin-title">Dashboard Overview</h2>
+                <p class="text-muted">Welcome back, Admin!</p>
             </div>
         </div>
 
